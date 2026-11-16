@@ -15,12 +15,14 @@
     cmds: [], cmdById: {}, catalog: [], cats: {}, animals: [], ground: [], players: [],
     favs: [], favLoaded: false, god: false, gameAge: -1, evAfter: 0,
     ent: {}, list: [], bySection: { c: [], i: [], b: [], m: [], a: [], g: [] },
-    tab: 'fav', section: 'c', claimTries: 0, durWant: null, themeLoaded: false, allCat: '', allFilter: '', catalogN: 0, dead: false, log: []
+    tab: 'fav', section: 'c', cmdPath: [], claimTries: 0, durWant: null, themeLoaded: false, allCat: '', allFilter: '', catalogN: 0, dead: false, log: []
   };
   var SECTIONS = ['c', 'i', 'b', 'm', 'a', 'g'];
   var DANGER = { ban: 1, kick: 1, delobj: 1, 'delete': 1, adminland_delete: 1, kzreload: 1 };
   var KIND_CODE = { c: 'CMD', i: 'ITM', b: 'BLD', m: 'OBJ', a: 'ANI', g: 'GND' };
-  var CAT_GLYPH = { Items: '⚒', Objects: '▣', Ground: '◢', Player: '♥', Players: '☺', Teleport: '➤', Moderation: '⚖', World: '☀', Economy: '¤', System: '⚙' };
+  // command folders: the registry's category column is "folder" or "folder/subfolder"; the labels live in i18n.js as cat_<folder> and cat_<folder>_<sub>
+  var CAT_GLYPH = { spawn: '✚', objects: '▣', player: '♥', move: '➤', world: '☀', mod: '⚖', economy: '¤', system: '⚙' };
+  var FOLDER_ORDER = ['spawn', 'objects', 'player', 'move', 'world', 'mod', 'economy', 'system'];
 
   /* ---------------------------------------------------------------- helpers */
   function parseQuery(q) { var o = {}; q = (q || '').replace(/^\?/, ''); if (!q) return o; var a = q.split('&'); for (var i = 0; i < a.length; i++) { var kv = a[i].split('='); o[decodeURIComponent(kv[0])] = decodeURIComponent((kv[1] || '').replace(/\+/g, ' ')); } return o; }
@@ -52,7 +54,11 @@
   }
   function ts() { var d = new Date(); function z(n) { return n < 10 ? '0' + n : '' + n; } return z(d.getHours()) + ':' + z(d.getMinutes()) + ':' + z(d.getSeconds()); }
   function indexOf(a, v) { for (var i = 0; i < a.length; i++) if (a[i] === v) return i; return -1; }
-  function glyphOf(e) { var g = e.kind === 'c' ? (CAT_GLYPH[e.sub] || '✦') : String(e.name || '?').charAt(0).toUpperCase(); return g; }
+  function glyphOf(e) { var g = e.kind === 'c' ? (CAT_GLYPH[String(e.cat || '').split('/')[0]] || '✦') : String(e.name || '?').charAt(0).toUpperCase(); return g; }
+  function catParts(cat) { var p = String(cat || '').split('/'); return [p[0], p[1] || '']; }
+  function folderLabel(f) { var k = 'cat_' + f, v = t(k); return v === k ? f : v; }
+  function subLabel(f, s) { var k = 'cat_' + f + '_' + s, v = t(k); return v === k ? s : v; }
+  function catLabel(cat) { var p = catParts(cat); return p[1] ? folderLabel(p[0]) + ' › ' + subLabel(p[0], p[1]) : folderLabel(p[0]); }
   function iconNode(e, cls) {
     var box = el('div', { 'class': cls || 'ico' });
     box.appendChild(document.createTextNode(glyphOf(e)));
@@ -104,7 +110,7 @@
       e.key = e.kind + ':' + e.id; e.nameN = norm(e.name); e.subN = norm(e.sub); e.kwN = norm(e.kw || ''); e.words = e.nameN.split(/[^a-z0-9]+/);
       ent[e.key] = e; list.push(e); sec[e.kind].push(e);
     }
-    for (i = 0; i < S.cmds.length; i++) { var c = S.cmds[i]; add({ kind: 'c', id: c.id, name: S.lang === 'de' ? c.de : c.en, sub: c.cat, kw: c.en + ' ' + c.de + ' ' + c.kw + ' ' + c.id, cmd: c }); }
+    for (i = 0; i < S.cmds.length; i++) { var c = S.cmds[i]; add({ kind: 'c', id: c.id, name: S.lang === 'de' ? c.de : c.en, cat: c.cat, sub: catLabel(c.cat), kw: c.en + ' ' + c.de + ' ' + c.kw + ' ' + c.id, cmd: c }); }
     for (i = 0; i < S.catalog.length; i++) { var x = S.catalog[i]; add({ kind: x.kind, id: x.id, name: x.name, sub: S.cats[x.cat] || '', icon: x.icon, kw: '' }); }
     for (i = 0; i < S.animals.length; i++) add({ kind: 'a', id: S.animals[i][0], name: S.lang === 'de' ? (S.animals[i][2] || S.animals[i][1]) : S.animals[i][1], sub: t('sec_a'), kw: S.animals[i][0] });
     for (i = 0; i < S.ground.length; i++) add({ kind: 'g', id: S.ground[i][0], name: S.lang === 'de' ? (S.ground[i][3] || S.ground[i][2]) : S.ground[i][2], sub: t('sec_g'), kw: S.ground[i][0] });
@@ -260,15 +266,25 @@
   }
 
   /* ---------------------------------------------------------------- card + grid (paged, size follows the window) */
-  var CARD_W = 204, CARD_H = 104;
+  // square tiles, all the same size: big icon on top, the name below (one line if it fits, else two, with a smaller font), a thin id line at the bottom
+  var CARD_W = 148, CARD_H = 154;
+  function nameSize(name) {
+    var n = String(name || '').length, longest = 0, w = String(name || '').split(/[\s\-]+/), i;
+    for (i = 0; i < w.length; i++) if (w[i].length > longest) longest = w[i].length;
+    var px = n <= 15 ? 14 : (n <= 28 ? 13 : (n <= 40 ? 12 : 11));
+    if (longest > 14 && px > 12) px = 12;
+    if (longest > 17 && px > 11) px = 11;
+    if (longest > 20) px = 10;
+    return px;
+  }
   function card(e, opts) {
     opts = opts || {};
     var fav = isFav(e);
     var c = el('div', { 'class': 'card k-' + e.kind + (opts.fav ? ' fav' : ''), 'data-key': e.key, title: e.name + (e.sub ? '  ·  ' + e.sub : '') + '  ·  ' + (e.kind === 'c' ? e.id : '#' + e.id) });
     c.appendChild(iconNode(e));
-    c.appendChild(el('div', { 'class': 'code', text: KIND_CODE[e.kind] }));
-    c.appendChild(el('div', { 'class': 'nm', text: e.name }));
-    c.appendChild(el('div', { 'class': 'sub', text: e.kind === 'c' ? e.sub : ('#' + e.id + (e.sub ? ' · ' + e.sub : '')) }));
+    var nm = el('div', { 'class': 'nm' }, [el('span', { text: e.name })]); nm.style.fontSize = nameSize(e.name) + 'px';
+    c.appendChild(nm);
+    c.appendChild(el('div', { 'class': 'meta' }, [el('span', { 'class': 'code', text: KIND_CODE[e.kind] }), el('span', { 'class': 'sub', text: e.kind === 'c' ? e.id : '#' + e.id })]));
     var st = el('button', { type: 'button', 'class': 'star' + (fav ? ' on' : ''), title: fav ? t('fav_del') : t('fav_add'), text: fav ? '★' : '☆' });
     st.onclick = function (ev) { ev.stopPropagation(); toggleFav(e); if (opts.onFav) opts.onFav(); };
     st.onmousedown = function (ev) { ev.stopPropagation(); };
@@ -350,14 +366,51 @@
     }
   }
 
+  /* commands as folders: big folder tiles -> (sub-folder tiles) -> the command tiles */
+  function renderCmdFolders(wrap) {
+    var cmds = S.bySection.c, folders = {}, order = [], i, p;
+    for (i = 0; i < cmds.length; i++) { p = catParts(cmds[i].cat); if (!folders[p[0]]) { folders[p[0]] = { key: p[0], n: 0, subs: {}, subOrder: [] }; order.push(p[0]); } var F = folders[p[0]]; F.n++; if (p[1]) { if (!F.subs[p[1]]) { F.subs[p[1]] = 0; F.subOrder.push(p[1]); } F.subs[p[1]]++; } }
+    order.sort(function (a, b) { var x = indexOf(FOLDER_ORDER, a), y = indexOf(FOLDER_ORDER, b); if (x < 0) x = 99; if (y < 0) y = 99; return x - y; });
+    var path = S.cmdPath, fo = path.length ? folders[path[0]] : null;
+    if (path.length && !fo) { S.cmdPath = path = []; }
+    if (path.length === 1 && fo && !fo.subOrder.length) { /* no sub-folders: show the commands */ }
+    // breadcrumb
+    var crumb = el('div', { 'class': 'crumb' });
+    function go(newPath) { S.cmdPath = newPath; renderAll(); }
+    crumb.appendChild(el('button', { type: 'button', 'class': path.length ? '' : 'on', text: t('sec_c'), onclick: function () { go([]); } }));
+    if (fo) { crumb.appendChild(el('span', { text: '›' })); crumb.appendChild(el('button', { type: 'button', 'class': path.length === 1 ? 'on' : '', text: folderLabel(fo.key), onclick: function () { go([fo.key]); } })); }
+    if (fo && path.length > 1) { crumb.appendChild(el('span', { text: '›' })); crumb.appendChild(el('button', { type: 'button', 'class': 'on', text: subLabel(fo.key, path[1]) })); }
+    if (path.length) crumb.appendChild(el('button', { type: 'button', 'class': 'back', text: '‹ ' + t('prev'), onclick: function () { go(path.slice(0, path.length - 1)); } }));
+    wrap.appendChild(crumb);
+    function tile(glyph, label, n, onclick, cls) {
+      return el('div', { 'class': 'folder' + (cls ? ' ' + cls : ''), onclick: onclick }, [el('div', { 'class': 'fg', text: glyph }), el('div', { 'class': 'fn', text: label }), el('div', { 'class': 'fc', text: n + ' ' + t('cmds_n') })]);
+    }
+    var host = el('div', { 'class': 'grid-host' }); wrap.appendChild(host);
+    if (!path.length) {
+      var g0 = el('div', { 'class': 'grid fgrid' });
+      if (!order.length) g0.appendChild(el('div', { 'class': 'empty', style: 'margin:30px 0' }, [t('sections_none')]));
+      for (i = 0; i < order.length; i++) (function (k) { g0.appendChild(tile(CAT_GLYPH[k] || '✦', folderLabel(k), folders[k].n, function () { go([k]); })); })(order[i]);
+      host.appendChild(g0); viewState.grid = null; return;
+    }
+    if (path.length === 1 && fo.subOrder.length) {
+      var g1 = el('div', { 'class': 'grid fgrid' });
+      for (i = 0; i < fo.subOrder.length; i++) (function (s) { g1.appendChild(tile(CAT_GLYPH[fo.key] || '✦', subLabel(fo.key, s), fo.subs[s], function () { go([fo.key, s]); }, 'sub')); })(fo.subOrder[i]);
+      host.appendChild(g1); viewState.grid = null; return;
+    }
+    var want = path.join('/');
+    var g = PagedGrid(host, function () { var out = [], j; for (j = 0; j < cmds.length; j++) if (path.length > 1 ? cmds[j].cat === want : catParts(cmds[j].cat)[0] === path[0]) out.push(cmds[j]); return out; }, { emptyKey: 'none' });
+    viewState.grid = g; g.render();
+  }
+
   function renderAll() {
     var v = clear($('view')); v.className = ''; var wrap = el('div', { 'class': 'view-flex' }); v.appendChild(wrap);
     var seg = el('div', { 'class': 'seg' }), i;
     for (i = 0; i < SECTIONS.length; i++) (function (k) {
       var n = S.bySection[k].length;
-      seg.appendChild(el('button', { type: 'button', 'class': k === S.section ? 'on' : '', onclick: function () { S.section = k; S.allCat = ''; S.allFilter = ''; renderAll(); } }, [t('sec_' + k), el('span', { 'class': 'n', text: String(n) })]));
+      seg.appendChild(el('button', { type: 'button', 'class': k === S.section ? 'on' : '', onclick: function () { S.section = k; S.allCat = ''; S.allFilter = ''; S.cmdPath = []; renderAll(); } }, [t('sec_' + k), el('span', { 'class': 'n', text: String(n) })]));
     })(SECTIONS[i]);
     wrap.appendChild(seg);
+    if (S.section === 'c') { renderCmdFolders(wrap); return; }
     if (S.section !== 'a' && S.section !== 'g') {
       var cats = {}, arr = S.bySection[S.section]; for (i = 0; i < arr.length; i++) cats[arr[i].sub] = (cats[arr[i].sub] || 0) + 1;
       var names = []; for (var c in cats) names.push(c); names.sort();
@@ -572,11 +625,11 @@
       var types = [['Axe', 'Tools'], ['Pickaxe', 'Tools'], ['Hammer', 'Tools'], ['Sword', 'Weapons'], ['Spear', 'Weapons'], ['Shield', 'Armor'], ['Helmet', 'Armor'], ['Boots', 'Armor'], ['Gloves', 'Armor'], ['Ingot', 'Resources'], ['Bowl', 'Household'], ['Cloak', 'Clothing']];
       var txt = ['C|1|Weapons', 'C|2|Tools', 'C|3|Armor', 'C|4|Resources', 'C|5|Household', 'C|6|Clothing', 'C|7|Workshops', 'C|8|Furniture', 'C|9|Carts'];
       var cid = { Weapons: 1, Tools: 2, Armor: 3, Resources: 4, Household: 5, Clothing: 6 }, id = 1000, i, j;
-      for (i = 0; i < mats.length; i++) for (j = 0; j < types.length; j++) txt.push('i|' + (id++) + '|' + cid[types[j][1]] + '|' + mats[i] + ' ' + types[j][0] + '|');
+      for (i = 0; i < mats.length; i++) for (j = 0; j < types.length; j++) txt.push('i|' + (id++) + '|' + cid[types[j][1]] + '|' + mats[i] + ' ' + types[j][0] + '|' + (j % 3 ? 'Items/Amberwood_billet.png' : ''));
       var bl = ['Barn', 'Smithy', 'Watermill', 'Tannery', 'Stonemason', 'Tavern', 'Chapel', 'Granary', 'Windmill', 'Stable', 'Kiln', 'Warehouse'], ol = ['Wooden Cart', 'Chest', 'Table', 'Bench', 'Barrel', 'Anvil', 'Loom', 'Bookshelf', 'Wardrobe', 'Banner'];
       for (i = 0; i < bl.length; i++) txt.push('b|' + (100 + i) + '|7|' + bl[i] + '|');
       for (i = 0; i < ol.length; i++) txt.push('m|' + (300 + i) + '|' + (i < 1 ? 9 : 8) + '|' + ol[i] + '|');
-      var cmds = ['# demo', 'give\tItems\tserver\t!give {type} {qty} {quality} {dur}\ttype:item,qty:int=1,quality:int=100,dur:int=100\tGive item to me\tGegenstand an mich geben\titem add', 'giveto\tItems\tserver\t!giveto {who} {type} {qty}\twho:player,type:item,qty:int=1\tGive item to a player\tGegenstand an Spieler geben\t', 'place\tObjects\tserver\t!place {type}\ttype:thing\tCreate object or building\tObjekt oder Gebäude erstellen\t', 'heal\tPlayer\tserver\t!heal {who}\twho:player?\tHeal (empty = me)\tHeilen (leer = ich)\t', 'godon\tPlayer\tlocal\t\t\tInvulnerable ON (GOD)\tUnverwundbar AN (GOD)\tgod', 'godoff\tPlayer\tlocal\t\t\tInvulnerable OFF\tUnverwundbar AUS\tgod', 'tp\tTeleport\tserver\t!tp {who}\twho:player\tGo to a player\tZu einem Spieler gehen\t', 'weather\tWorld\tslash\t/WEATHER {kind}\tkind:choice(Fair|Cloudy|Shower|Snowy)=Fair\tSet the weather\tWetter setzen\t', 'kick\tModeration\tserver\t!kick {who}\twho:player\tKick a player\tSpieler kicken\t', 'announce\tModeration\tserver\t!announce {text}\ttext:text\tAnnouncement to everyone\tAnkündigung an alle\t', 'inflation\tEconomy\tserver\t!inflation\t\tShow inflation now\tInflation jetzt anzeigen\t'];
+      var cmds = ['# demo', 'give	spawn/items	server	!give {type} {qty} {quality} {dur}	type:item,qty:int=1,quality:int=100,dur:int=100	Give item to me	Gegenstand an mich geben	item add','giveto	spawn/items	server	!giveto {who} {type} {qty}	who:player,type:item,qty:int=1	Give item to a player	Gegenstand an Spieler geben	','addweapons	spawn/items	slash	/ADDWEAPONS		Add all weapons	Alle Waffen hinzufügen	','place	spawn/build	server	!place {type}	type:thing	Create object or building	Objekt oder Gebäude erstellen	','animal	spawn/animals	slash	/ANIMAL {kind}	kind:animal	Spawn an animal	Ein Tier erschaffen	','complete	objects	slash	/COMPLETE		Complete selected building	Ausgewähltes Gebäude fertigstellen	','heal	player/protect	server	!heal {who}	who:player?	Heal (empty = me)	Heilen (leer = ich)	','godon	player/protect	local			Invulnerable ON (GOD)	Unverwundbar AN (GOD)	god','godoff	player/protect	local			Invulnerable OFF	Unverwundbar AUS	god','removeeffects	player/effects	slash	/REMOVEEFFECTS		Remove all effects	Alle Effekte entfernen	','setmyskill	player/skills	slash	/SETMYSKILL {skill} {value}	skill:word,value:int=100	Set my skill	Meinen Skill setzen	','tp	move/teleport	server	!tp {who}	who:player	Go to a player	Zu einem Spieler gehen	','pos	move/position	server	!pos		Show my position	Meine Position anzeigen	','weather	world/weather	slash	/WEATHER {kind}	kind:choice(Fair|Cloudy|Shower|Snowy)=Fair	Set the weather	Wetter setzen	','ground	world/terrain	server	!ground {mat}	mat:ground	Change the ground under me	Boden unter mir ändern	','kick	mod	server	!kick {who}	who:player	Kick a player	Spieler kicken	','announce	mod	server	!announce {text}	text:text	Announcement to everyone	Ankündigung an alle	','inflation	economy	server	!inflation		Show inflation now	Inflation jetzt anzeigen	','whoami	system	server	!whoami		Who am I (Steam ID / GM right)	Wer bin ich (Steam-ID / GM-Recht)	'];
       parseCommands(cmds.join('\n')); parseCatalog(txt.join('\n'));
       S.animals = [['BoarData', 'Boar', 'Wildschwein'], ['WolfData', 'Wolf', 'Wolf'], ['BearData', 'Bear', 'Bär'], ['MooseData', 'Moose', 'Elch']];
       S.ground = [['rock', '3', 'Rock', 'Fels'], ['riverrock', '27', 'River rock', 'Flussstein'], ['swamp', '26', 'Swamp', 'Sumpf']];

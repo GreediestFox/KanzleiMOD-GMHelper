@@ -16,7 +16,14 @@ window.KZ_I18N = {
     req: "required", need_num: "needs a number", need_word: "one word only", confirm: "Really run this?",
     catalog_wait: "Loading the game's item list ...", catalog_n: "entries loaded", session_gone: "This session has ended. Press F6 in the game to open a fresh one.",
     queue_full: "The game is not picking up commands. Is it running?", god_on: "Invulnerable", ground_mat: "Material", animal: "Animal",
-    sections_none: "(not loaded yet)", id: "ID", cat: "Category", lang_btn: "Deutsch", demo_note: "Demo data - not connected to a game."
+    sections_none: "(not loaded yet)", id: "ID", cat: "Category", lang_btn: "Deutsch", demo_note: "Demo data - not connected to a game.",
+    cmds_n: "commands",
+    cat_spawn: "Spawning", cat_spawn_items: "Items", cat_spawn_build: "Buildings & objects", cat_spawn_animals: "Animals",
+    cat_objects: "Object control",
+    cat_player: "Player", cat_player_protect: "Healing & protection", cat_player_effects: "Effects & status", cat_player_skills: "Skills & stats",
+    cat_move: "Movement", cat_move_teleport: "Teleport", cat_move_position: "Position & unstuck",
+    cat_world: "World", cat_world_weather: "Weather, time & nature", cat_world_terrain: "Terrain", cat_world_adminland: "Adminland (protected areas)",
+    cat_mod: "Moderation", cat_economy: "Economy", cat_system: "System"
   },
   de: {
     theme: "Farben", theme_title: "Farbschema", theme_hud: "HUD", theme_light: "Hell", theme_mono: "Dunkel (Mono)", theme_custom: "Eigene", c_bg: "Hintergrund", c_text: "Text", c_a1: "Hervorhebung 1", c_a2: "Hervorhebung 2", theme_reset: "Zur\u00fcck zu HUD", theme_hint: "Farbe wie #ff6b3d eintippen oder mit der Auswahl w\u00e4hlen. Die Wahl wird gemerkt.",
@@ -34,6 +41,13 @@ window.KZ_I18N = {
     req: "erforderlich", need_num: "braucht eine Zahl", need_word: "nur ein Wort", confirm: "Wirklich ausführen?",
     catalog_wait: "Die Gegenstandsliste des Spiels wird geladen ...", catalog_n: "Einträge geladen", session_gone: "Diese Sitzung ist beendet. Im Spiel F6 drücken, um eine neue zu öffnen.",
     queue_full: "Das Spiel holt keine Befehle ab. Läuft es?", god_on: "Unverwundbar", ground_mat: "Material", animal: "Tier",
-    sections_none: "(noch nicht geladen)", id: "ID", cat: "Kategorie", lang_btn: "English", demo_note: "Demodaten - nicht mit einem Spiel verbunden."
+    sections_none: "(noch nicht geladen)", id: "ID", cat: "Kategorie", lang_btn: "English", demo_note: "Demodaten - nicht mit einem Spiel verbunden.",
+    cmds_n: "Befehle",
+    cat_spawn: "Erschaffen", cat_spawn_items: "Gegenstände", cat_spawn_build: "Gebäude & Objekte", cat_spawn_animals: "Tiere",
+    cat_objects: "Objekte steuern",
+    cat_player: "Spieler", cat_player_protect: "Heilung & Schutz", cat_player_effects: "Effekte & Status", cat_player_skills: "Fertigkeiten & Werte",
+    cat_move: "Bewegung", cat_move_teleport: "Teleport", cat_move_position: "Position & Befreien",
+    cat_world: "Welt", cat_world_weather: "Wetter, Zeit & Natur", cat_world_terrain: "Gelände", cat_world_adminland: "Adminland (Schutzgebiete)",
+    cat_mod: "Moderation", cat_economy: "Wirtschaft", cat_system: "System"
   }
 };

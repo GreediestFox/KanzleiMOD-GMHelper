@@ -4,65 +4,65 @@
 #   template placeholders {name} are filled from args; the client Core renders the text itself (the web page only sends id + values).
 #   args     comma separated  name:type[=default][?]   types: item building object thing animal ground player int text word choice(a|b|c)   '?' = may stay empty
 #   Lines starting with # are comments. Run tools/kz_sync.py after editing: it validates and copies the file to the server and client folders.
-give	Items	server	!give {type} {qty} {quality}	type:item,qty:int=1,quality:int=100	Give item to me (durability follows quality)	Gegenstand an mich geben (Haltbarkeit folgt der Qualitaet)	item add spawn
-giveto	Items	server	!giveto {who} {type} {qty} {quality}	who:player,type:item,qty:int=1,quality:int=100	Give item to a player (durability follows quality)	Gegenstand an Spieler geben (Haltbarkeit folgt der Qualitaet)	item add
-delete	Items	server	!delete {type} {qty}	type:item,qty:int=1	Delete items from my inventory	Gegenstaende aus meinem Inventar loeschen	remove
-addweapons	Items	slash	/ADDWEAPONS		Add all weapons	Alle Waffen hinzufuegen	
-addtools	Items	slash	/ADDTOOLS		Add all tools	Alle Werkzeuge hinzufuegen	
-addarmor	Items	slash	/ADDARMOR		Add all armor	Alle Ruestungen hinzufuegen	
-addresources	Items	slash	/ADDRESOURCES		Add all crafting resources	Alle Handwerksressourcen hinzufuegen	
-addreagents	Items	slash	/ADDREAGENTS {qty} {quality}	qty:int=1,quality:int=100	Add alchemy reagents	Alchemie-Reagenzien hinzufuegen	
-addantidote	Items	slash	/ADDANTIDOTE		Add antidotes	Gegengifte hinzufuegen	
-place	Objects	server	!place {type}	type:thing	Create object or building (1 tile in front)	Objekt oder Gebaeude erstellen (1 Feld vor mir)	spawn build
-complete	Objects	slash	/COMPLETE		Complete selected building	Ausgewaehltes Gebaeude fertigstellen	
-delobj	Objects	slash	/DELOBJ		Delete selected object	Ausgewaehltes Objekt loeschen	
-addobj	Objects	slash	/ADDOBJ {type}	type:thing	Add object by type id (game command)	Objekt per Typ-ID hinzufuegen (Spielbefehl)	
-claimup	Objects	slash	/CLAIM UP		Claim monument up (selected)	Monument beanspruchen: hoch	
-claimdown	Objects	slash	/CLAIM DOWN		Claim monument down (selected)	Monument beanspruchen: runter	
-wcfinish	Objects	slash	/WC FINISH		Finish working container timer	Arbeitscontainer-Timer beenden	
-ground	Ground	server	!ground {mat}	mat:ground	Change the ground under me	Boden unter mir aendern	terrain surface
-raise	Ground	server	!raise {mat}	mat:ground	Raise the ground with a material	Boden mit Material erhoehen	terrain
-lower	Ground	server	!lower		Lower the ground by one layer (undo)	Boden um eine Schicht senken (rueckgaengig)	terrain
-geo	Ground	server	!geo		Show map cell id (geo id)	Kartenfeld-ID anzeigen	
-heal	Player	server	!heal {who}	who:player?	Heal (empty = me)	Heilen (leer = ich)	
-healself	Player	slash	/HEALSELF		Heal myself (game command)	Mich heilen (Spielbefehl)	
-godon	Player	local			Invulnerable ON (GOD)	Unverwundbar AN (GOD)	god invul
-godoff	Player	local			Invulnerable OFF	Unverwundbar AUS	god invul
-dmgred1	Player	slash	/DECREASEHPDMG 1		Damage reduction ON	Schadensreduktion AN	
-dmgred0	Player	slash	/DECREASEHPDMG 0		Damage reduction OFF	Schadensreduktion AUS	
-removeeffects	Player	slash	/REMOVEEFFECTS		Remove all effects	Alle Effekte entfernen	
-alignment	Player	slash	/ALIGNMENT {value}	value:int=0	Set alignment (-1000..1000)	Gesinnung setzen (-1000..1000)	
-criminal	Player	slash	/CRIMINAL {seconds}	seconds:int=60	Set criminal flag (seconds)	Kriminell-Markierung (Sekunden)	
-setmyskill	Player	slash	/SETMYSKILL {skill} {value}	skill:word,value:int=100	Set my skill (id or name)	Meinen Skill setzen (ID oder Name)	
-setmystat	Player	slash	/SETMYSTAT {stat} {value}	stat:choice(0|1|2|3|4)=0,value:int=100	Set my stat (0 STR 1 AGI 2 WIL 3 INT 4 CON)	Meinen Wert setzen (0 STR 1 AGI 2 WIL 3 INT 4 CON)	
-setplayerskill	Player	slash	/SETPLAYERSKILL {who} {skill} {value}	who:player,skill:word,value:int=50	Change a player's skill	Skill eines Spielers aendern	
-players	Players	server	!players		List online players	Spieler online anzeigen	
-tp	Teleport	server	!tp {who}	who:player	Go to a player	Zu einem Spieler gehen	
-bring	Teleport	server	!bring {who}	who:player	Bring a player to me	Spieler zu mir holen	
-tppos	Teleport	server	!tppos {x} {y} {z}	x:int,y:int,z:int	Teleport to coordinates	Zu Koordinaten teleportieren	
-pos	Teleport	server	!pos		Show my position	Meine Position anzeigen	
-tpspawn	Teleport	slash	/TPTOSPAWN		Teleport to spawn point	Zum Spawnpunkt teleportieren	
-stuck	Teleport	slash	/STUCK		Unstuck	Festgesteckt (befreien)	
-jtgm	Teleport	slash	/JT GM		Jump on any terrain (GM)	Auf jedem Gelaende springen (GM)	
-kick	Moderation	server	!kick {who}	who:player	Kick a player	Spieler kicken	
-ban	Moderation	server	!ban {who}	who:player	Ban a player	Spieler bannen	
-unban	Moderation	server	!unban {who}	who:player	Unban a player	Spieler entbannen	
-announce	Moderation	server	!announce {text}	text:text	Announcement to everyone online	Ankuendigung an alle Online-Spieler	
-weather	World	slash	/WEATHER {kind}	kind:choice(Fair|Cloudy|Shower|Snowy)=Fair	Set the weather	Wetter setzen	
-weathernow	World	slash	/WEATHER		Which weather now?	Welches Wetter gerade?	
-growcrops	World	slash	/GROWCROPS		Grow crops here (one day)	Feldfruechte hier wachsen lassen (ein Tag)	
-jhon	World	slash	/JHFORCEON		Force judgment hour ON	Stunde des Gerichts erzwingen AN	
-jhoff	World	slash	/JHFORCEOFF		Force judgment hour OFF	Stunde des Gerichts erzwingen AUS	
-animal	World	slash	/ANIMAL {kind}	kind:animal	Spawn an animal	Tier spawnen	wolf boar bear
-adminland_create	World	server	!adminland create {name} {len} {wid}	name:word,len:int=10,wid:int=10	Create adminland (protected area)	Adminland erstellen (geschuetzter Bereich)	
-adminland_preview	World	server	!adminland preview {len} {wid}	len:int=10,wid:int=10	Preview adminland corners	Adminland-Ecken vorab anzeigen	
-adminland_delete	World	server	!adminland delete {name}	name:word	Delete adminland (by name)	Adminland loeschen (nach Name)	
-inflation	Economy	server	!inflation		Show inflation now	Inflation jetzt anzeigen	
-inflation_history	Economy	server	!inflation history {n}	n:int=10	Inflation history	Inflationsverlauf	
-inflation_baseline	Economy	server	!inflation baseline {copper}	copper:int	Set the coin baseline (copper per player)	Muenz-Basiswert setzen (Kupfer pro Spieler)	
-dashboard	Economy	local			Economy dashboard	Wirtschafts-Dashboard	
-gmlog	System	server	!gmlog {n}	n:int=10	Show my last GM actions	Meine letzten GM-Aktionen zeigen	
-whoami	System	server	!whoami		Who am I (Steam ID / GM right)	Wer bin ich (Steam-ID / GM-Recht)	
-help	System	server	!help		Server command help	Server-Befehlshilfe	
-kzreload	System	server	!kzreload		Reload the data files on the server	Datendateien auf dem Server neu laden	
-logout	System	local			GM logout	GM abmelden	
+give	spawn/items	server	!give {type} {qty} {quality}	type:item,qty:int=1,quality:int=100	Give item to me (durability follows quality)	Gegenstand an mich geben (Haltbarkeit folgt der Qualitaet)	item add spawn
+giveto	spawn/items	server	!giveto {who} {type} {qty} {quality}	who:player,type:item,qty:int=1,quality:int=100	Give item to a player (durability follows quality)	Gegenstand an Spieler geben (Haltbarkeit folgt der Qualitaet)	item add
+delete	spawn/items	server	!delete {type} {qty}	type:item,qty:int=1	Delete items from my inventory	Gegenstaende aus meinem Inventar loeschen	remove
+addweapons	spawn/items	slash	/ADDWEAPONS		Add all weapons	Alle Waffen hinzufuegen	
+addtools	spawn/items	slash	/ADDTOOLS		Add all tools	Alle Werkzeuge hinzufuegen	
+addarmor	spawn/items	slash	/ADDARMOR		Add all armor	Alle Ruestungen hinzufuegen	
+addresources	spawn/items	slash	/ADDRESOURCES		Add all crafting resources	Alle Handwerksressourcen hinzufuegen	
+addreagents	spawn/items	slash	/ADDREAGENTS {qty} {quality}	qty:int=1,quality:int=100	Add alchemy reagents	Alchemie-Reagenzien hinzufuegen	
+addantidote	spawn/items	slash	/ADDANTIDOTE		Add antidotes	Gegengifte hinzufuegen	
+place	spawn/build	server	!place {type}	type:thing	Create object or building (1 tile in front)	Objekt oder Gebaeude erstellen (1 Feld vor mir)	spawn build
+complete	objects	slash	/COMPLETE		Complete selected building	Ausgewaehltes Gebaeude fertigstellen	
+delobj	objects	slash	/DELOBJ		Delete selected object	Ausgewaehltes Objekt loeschen	
+addobj	spawn/build	slash	/ADDOBJ {type}	type:thing	Add object by type id (game command)	Objekt per Typ-ID hinzufuegen (Spielbefehl)	
+claimup	objects	slash	/CLAIM UP		Claim monument up (selected)	Monument beanspruchen: hoch	
+claimdown	objects	slash	/CLAIM DOWN		Claim monument down (selected)	Monument beanspruchen: runter	
+wcfinish	objects	slash	/WC FINISH		Finish working container timer	Arbeitscontainer-Timer beenden	
+ground	world/terrain	server	!ground {mat}	mat:ground	Change the ground under me	Boden unter mir aendern	terrain surface
+raise	world/terrain	server	!raise {mat}	mat:ground	Raise the ground with a material	Boden mit Material erhoehen	terrain
+lower	world/terrain	server	!lower		Lower the ground by one layer (undo)	Boden um eine Schicht senken (rueckgaengig)	terrain
+geo	world/terrain	server	!geo		Show map cell id (geo id)	Kartenfeld-ID anzeigen	
+heal	player/protect	server	!heal {who}	who:player?	Heal (empty = me)	Heilen (leer = ich)	
+healself	player/protect	slash	/HEALSELF		Heal myself (game command)	Mich heilen (Spielbefehl)	
+godon	player/protect	local			Invulnerable ON (GOD)	Unverwundbar AN (GOD)	god invul
+godoff	player/protect	local			Invulnerable OFF	Unverwundbar AUS	god invul
+dmgred1	player/protect	slash	/DECREASEHPDMG 1		Damage reduction ON	Schadensreduktion AN	
+dmgred0	player/protect	slash	/DECREASEHPDMG 0		Damage reduction OFF	Schadensreduktion AUS	
+removeeffects	player/effects	slash	/REMOVEEFFECTS		Remove all effects	Alle Effekte entfernen	
+alignment	player/effects	slash	/ALIGNMENT {value}	value:int=0	Set alignment (-1000..1000)	Gesinnung setzen (-1000..1000)	
+criminal	player/effects	slash	/CRIMINAL {seconds}	seconds:int=60	Set criminal flag (seconds)	Kriminell-Markierung (Sekunden)	
+setmyskill	player/skills	slash	/SETMYSKILL {skill} {value}	skill:word,value:int=100	Set my skill (id or name)	Meinen Skill setzen (ID oder Name)	
+setmystat	player/skills	slash	/SETMYSTAT {stat} {value}	stat:choice(0|1|2|3|4)=0,value:int=100	Set my stat (0 STR 1 AGI 2 WIL 3 INT 4 CON)	Meinen Wert setzen (0 STR 1 AGI 2 WIL 3 INT 4 CON)	
+setplayerskill	player/skills	slash	/SETPLAYERSKILL {who} {skill} {value}	who:player,skill:word,value:int=50	Change a player's skill	Skill eines Spielers aendern	
+players	mod	server	!players		List online players	Spieler online anzeigen	
+tp	move/teleport	server	!tp {who}	who:player	Go to a player	Zu einem Spieler gehen	
+bring	move/teleport	server	!bring {who}	who:player	Bring a player to me	Spieler zu mir holen	
+tppos	move/teleport	server	!tppos {x} {y} {z}	x:int,y:int,z:int	Teleport to coordinates	Zu Koordinaten teleportieren	
+pos	move/position	server	!pos		Show my position	Meine Position anzeigen	
+tpspawn	move/teleport	slash	/TPTOSPAWN		Teleport to spawn point	Zum Spawnpunkt teleportieren	
+stuck	move/position	slash	/STUCK		Unstuck	Festgesteckt (befreien)	
+jtgm	move/position	slash	/JT GM		Jump on any terrain (GM)	Auf jedem Gelaende springen (GM)	
+kick	mod	server	!kick {who}	who:player	Kick a player	Spieler kicken	
+ban	mod	server	!ban {who}	who:player	Ban a player	Spieler bannen	
+unban	mod	server	!unban {who}	who:player	Unban a player	Spieler entbannen	
+announce	mod	server	!announce {text}	text:text	Announcement to everyone online	Ankuendigung an alle Online-Spieler	
+weather	world/weather	slash	/WEATHER {kind}	kind:choice(Fair|Cloudy|Shower|Snowy)=Fair	Set the weather	Wetter setzen	
+weathernow	world/weather	slash	/WEATHER		Which weather now?	Welches Wetter gerade?	
+growcrops	world/weather	slash	/GROWCROPS		Grow crops here (one day)	Feldfruechte hier wachsen lassen (ein Tag)	
+jhon	world/weather	slash	/JHFORCEON		Force judgment hour ON	Stunde des Gerichts erzwingen AN	
+jhoff	world/weather	slash	/JHFORCEOFF		Force judgment hour OFF	Stunde des Gerichts erzwingen AUS	
+animal	spawn/animals	slash	/ANIMAL {kind}	kind:animal	Spawn an animal	Tier spawnen	wolf boar bear
+adminland_create	world/adminland	server	!adminland create {name} {len} {wid}	name:word,len:int=10,wid:int=10	Create adminland (protected area)	Adminland erstellen (geschuetzter Bereich)	
+adminland_preview	world/adminland	server	!adminland preview {len} {wid}	len:int=10,wid:int=10	Preview adminland corners	Adminland-Ecken vorab anzeigen	
+adminland_delete	world/adminland	server	!adminland delete {name}	name:word	Delete adminland (by name)	Adminland loeschen (nach Name)	
+inflation	economy	server	!inflation		Show inflation now	Inflation jetzt anzeigen	
+inflation_history	economy	server	!inflation history {n}	n:int=10	Inflation history	Inflationsverlauf	
+inflation_baseline	economy	server	!inflation baseline {copper}	copper:int	Set the coin baseline (copper per player)	Muenz-Basiswert setzen (Kupfer pro Spieler)	
+dashboard	economy	local			Economy dashboard	Wirtschafts-Dashboard	
+gmlog	system	server	!gmlog {n}	n:int=10	Show my last GM actions	Meine letzten GM-Aktionen zeigen	
+whoami	system	server	!whoami		Who am I (Steam ID / GM right)	Wer bin ich (Steam-ID / GM-Recht)	
+help	system	server	!help		Server command help	Server-Befehlshilfe	
+kzreload	system	server	!kzreload		Reload the data files on the server	Datendateien auf dem Server neu laden	
+logout	system	local			GM logout	GM abmelden	

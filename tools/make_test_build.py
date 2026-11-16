@@ -44,6 +44,7 @@ copy("client/mod/KanzleiMOD", "client/mod/KanzleiMOD")
 write("client/mod/KanzleiMOD/kanzlei_config.cs", """// Local test: the relay runs on this PC (Start_Relay.bat). For the real website put the https / http addresses of gm.<your domain> here instead.
 $KZ::pageHost = "http://127.0.0.1:8787";
 $KZ::gameHost = "http://127.0.0.1:8787";
+$KZ::iconBase = "none";   // icons come from the relay (/icons/, see tools/copy_icons.py), not from file:///
 """)
 
 # 3. server, two layouts (same code; the mod finds its folder by itself)

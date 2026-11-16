@@ -2,6 +2,18 @@
 
 Written 2026-11-16, first commit of the rework.
 
+## First game test (2026-11-16, local test server, 0.3.0-test1 -> test2)
+Works in the real client: F6 opens the window ("Spiel verbunden"), the catalog of 1,874 entries arrives, give / place / weather etc. run. Findings and what was changed (0.3.0-test2):
+| Finding | Cause | Change |
+|---|---|---|
+| Umlauts showed as `?` | The engine hands a non-ASCII character over as ONE character (not as its UTF-8 bytes), so the byte table in `KZ_enc` never found it. | `client/mod/KanzleiMOD/data/chars.kz` (char + UTF-8 hex) is loaded with the same `FileObject` path as the names; `KZ_enc` swaps them for tokens and writes `%C3%A4`. The 7 German characters are tried first. |
+| No icons | `file:///` from an http page is blocked in the game's browser window. | Icons are served by the relay: `python tools/copy_icons.py "<game folder>"` fills `eyes/icons/` (not in git, game art), `eyes/config.js` has `iconBase: "/icons/"`, the local test config sets `$KZ::iconBase = "none"`. |
+| Game froze ~24 s on the first open (log: `Last tick took 24219`) | `KZ_uploadBlob` cut the 150 KB catalog into 300 parts in one tick. | Job queue `KZ_jobPump`: 60 lines per tick to cut, 3 parts per tick to encode and send. |
+| Old catalog cached by the relay kept the `?` | Hash only depended on lengths. | Hash prefix `k2`. Change it again whenever the encoding of the catalog changes. |
+| Tiles too wide, names cut | Layout. | Square 138 x 146 tiles, big icon, name in one line or two (font by length). |
+| Commands as one long list | - | The category column of `shared/commands.kz` is now `folder` or `folder/sub`; the UI shows folder tiles, then sub folders, then commands. Labels: `cat_<folder>` / `cat_<folder>_<sub>` in `eyes/i18n.js`. |
+Still open: what the real https site needs (Cloudflare domain, `eyes/icons` deployed with the relay), and the short hitch when the browser window is created (Qt WebEngine, ~0.5 s plus a texture reload by the engine).
+
 ## Tested here (no game available)
 | Area | How | Result |
 |---|---|---|
