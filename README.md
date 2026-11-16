@@ -26,6 +26,7 @@ Status of what is tested and what is not: **[docs/STATUS.md](docs/STATUS.md)**. 
 - Item dialog (quantity / quality / durability, to me or to a player), forms generated from the command registry, player picker from the online list.
 - Every answer from the server shows as a green **Erledigt / Done** or red **Fehler / Failed**; log at the bottom.
 - **GOD**: while invulnerable is on, a gold "GM GOD" is shown on the game screen and in the page header.
+- **Colour schemes** (button "Farben" / "Theme" in the header): HUD (orange + cyan), Hell (white background, black text and highlights), Dunkel-Mono (black background, white text and highlights), and your own colours (background, text, two highlights). Remembered in the browser and in a file on the GM client.
 - German / English page; item and object names follow the game's own language.
 - The old native panel stays available as **Ctrl+F6** (fallback) until the web UI is proven in the game.
 
