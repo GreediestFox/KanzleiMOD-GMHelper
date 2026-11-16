@@ -1,0 +1,19 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "kanzlei-gm",
+  "main": "src/index.js",
+  "compatibility_date": "2026-09-01",
+  "assets": {
+    "directory": "../eyes",
+    "binding": "ASSETS",
+    "run_worker_first": ["/g/*", "/p/*", "/api/*"]
+  },
+  "d1_databases": [
+    // fill in after:  npx wrangler d1 create kanzlei-gm
+    { "binding": "DB", "database_name": "kanzlei-gm", "database_id": "00000000-0000-0000-0000-000000000000", "migrations_dir": "migrations" }
+  ],
+  "workers_dev": false,
+  // subdomain of your website; created by the custom_domain entry on deploy
+  "routes": [{ "pattern": "gm.wulpischelande.de", "custom_domain": true }],
+  "observability": { "enabled": true }
+}

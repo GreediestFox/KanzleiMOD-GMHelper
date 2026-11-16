@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kanzlei GM</title>
+<link rel="stylesheet" href="style.css">
+<script src="config.js"></script>
+</head>
+<body>
+<div id="app">
+  <header id="top">
+    <div class="brand"><span class="brand-mark">&#9876;</span> Kanzlei <b>GM</b></div>
+    <div class="search-wrap">
+      <input id="q" type="text" autocomplete="off" spellcheck="false">
+      <button id="qgo" type="button">&#128269;</button>
+    </div>
+    <div class="top-right">
+      <span id="god" class="god" style="display:none">GOD</span>
+      <span id="conn" class="conn off"><i></i><span id="conn-t"></span></span>
+      <span id="demo-flag" class="demo" style="display:none">DEMO</span>
+      <button id="lang" type="button" class="lang"></button>
+    </div>
+  </header>
+  <nav id="tabs">
+    <button type="button" data-tab="fav" class="tab on"></button>
+    <button type="button" data-tab="all" class="tab"></button>
+  </nav>
+  <main id="view"></main>
+  <footer id="bar">
+    <div id="bar-last"></div>
+    <button type="button" id="bar-toggle"></button>
+    <div id="bar-log" style="display:none"></div>
+  </footer>
+  <div id="modal-root"></div>
+</div>
+<script src="i18n.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,5 @@
+# Ground materials for !ground / !raise. TAB separated: key | substance id (ter2_id from cm_substances) | label_en | label_de.
+# Add a line for a new material (verify the substance id in game), run tools/kz_sync.py; the server reads this file at boot and on !kzreload.
+rock	3	Rock	Fels
+riverrock	27	River rock	Flussstein
+swamp	26	Swamp	Sumpf

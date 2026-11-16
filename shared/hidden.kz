@@ -1,0 +1,6 @@
+# Object type ids the catalog hides on purpose (removed recipes / content). One entry per line: a single id or a range a-b.  # comment allowed.
+2461-2466	# Knool weapons
+2359-2362	# Knool carcasses
+2399
+2940-2961	# Tribe Camp decorations
+3562-3573	# case-hardened / toughened bars + ingots
