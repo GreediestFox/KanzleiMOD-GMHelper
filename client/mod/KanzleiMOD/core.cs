@@ -603,10 +603,26 @@ function KZ_toggle()
    gm("login");
 }
 
+// Icons come from the client's own art folder (art/2D): the page gets its address as file:///<game folder>/art/2D/ (parameter ib).
+function KZ_iconBase()
+{
+   %dir = strreplace(getMainDotCsDir(), "\\", "/");
+   return "file:///" @ %dir @ "/art/2D/";
+}
+
+function KZ_iconParam()
+{
+   if ($KZ::iconBase $= "none") {
+      return "";
+   }
+   %b = ($KZ::iconBase $= "") ? KZ_iconBase() : $KZ::iconBase;
+   return "&ib=" @ KZ_enc(%b);
+}
+
 function KZ_openUi()
 {
    KZ_newSession();
-   %url = $KZ::pageHost @ "/?s=" @ $KZ::s @ "&p=" @ $KZ::p @ "&lang=" @ KZB_lang();
+   %url = $KZ::pageHost @ "/?s=" @ $KZ::s @ "&p=" @ $KZ::p @ "&lang=" @ KZB_lang() @ KZ_iconParam();
    KZ_req(1, "/g/hello", KZ_sessionQuery() @ "&lang=" @ KZB_lang() @ "&v=" @ $KZ::version, "KZ_onHello", "");
    $KZ::web = openWeb(%url);       // the page retries its first contact for a few seconds, until the relay knows the session
    if (isObject($KZ::web)) {

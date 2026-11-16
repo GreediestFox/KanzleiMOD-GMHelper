@@ -29,7 +29,7 @@ function KZProbe()
       for (%j = 0; %j < %n; %j++) { %d = %d @ "x"; }
       KZ_req(1, "/api/echo", "d=" @ %d, "KZProbe_echo", "url length with" SPC %n SPC "data characters");
    }
-   %url = $KZ::pageHost @ "/probe.html";
+   %url = $KZ::pageHost @ "/probe.html?img=" @ KZ_enc(KZ_iconBase() @ "Objects/big_tanning_tub.png");
    if (isFunction("openWeb")) { openWeb(%url); }
    echo("[KZProbe] opened" SPC %url SPC "(browser features). The relay answers follow below.");
 }

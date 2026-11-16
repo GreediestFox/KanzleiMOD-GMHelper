@@ -35,4 +35,4 @@ Console (`~`): `KZProbe();` – it prints what could not be tested outside the g
 7. Ctrl+F6 still opens the old panel.
 
 ## 6. Only then
-Copy the proven files to the staging folder / `AP Fixes` and decide about the R2 upload. Item icons: put the PNGs under the path in `eyes/config.js` (`iconBase`) on the relay or R2; they are the game's art, keep that location private to GMs if you want to stay clear of copyright questions.
+Copy the proven files to the staging folder / `AP Fixes` and decide about the R2 upload. Item icons are read from the client's own `art/2D` folder; nothing of the game's art is hosted. Staging steps for `G:` are in `docs/STAGING_G.md`.

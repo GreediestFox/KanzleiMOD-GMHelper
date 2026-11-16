@@ -7,6 +7,8 @@
   var CFG = window.KZ_CONFIG || {};
   var Q = parseQuery(location.search);
   var DEMO = !!Q.demo;
+  // icons: the game passes the address of its own art/2D folder (ib); otherwise the deployment default
+  var ICONS = Q.ib !== undefined ? Q.ib : (CFG.iconBase || '');
   var S = {
     lang: (Q.lang === 'en' || Q.lang === 'de') ? Q.lang : (/^de/i.test(navigator.language || '') ? 'de' : 'en'),
     s: Q.s || '', p: Q.p || '',
@@ -54,10 +56,10 @@
     var box = el('div', { 'class': cls || 'ico' });
     box.style.background = KIND_COLOR[e.kind] || '#444';
     box.appendChild(document.createTextNode(glyphOf(e)));
-    if (e.icon && CFG.iconBase) {
+    if (e.icon && ICONS) {
       var img = new Image();
       img.onload = function () { clear(box); box.style.background = '#15110a'; box.appendChild(img); };
-      img.src = CFG.iconBase + e.icon;
+      img.src = ICONS + e.icon.split('/').map(encodeURIComponent).join('/');
     }
     return box;
   }

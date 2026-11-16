@@ -21,9 +21,15 @@ add('ES6 let / template strings', (function () { try { return eval('let a=1;`${a
 add('String.normalize', typeof ''.normalize === 'function');
 add('window size', window.innerWidth + ' x ' + window.innerHeight);
 add('devicePixelRatio', window.devicePixelRatio);
+var imgUrl = (location.search.match(/[?&]img=([^&]*)/) || [])[1];
+if (imgUrl) { imgUrl = decodeURIComponent(imgUrl); var im = new Image(); im.onload = function () { add('icon from the game folder (file://)', true); render(); }; im.onerror = function () { add('icon from the game folder (file://)', false); render(); }; im.src = imgUrl; add('icon test address', imgUrl); }
 var t = document.getElementById('t');
+function render() { t.innerHTML = ''; draw(); }
+function draw() {
 for (var i = 0; i < rows.length; i++) {
   var v = rows[i][1], c = v === true ? 'y' : v === false ? 'n' : '';
   t.innerHTML += '<tr><td>' + rows[i][0] + '</td><td class="' + c + '">' + String(v) + '</td></tr>';
 }
+}
+draw();
 </script></body></html>

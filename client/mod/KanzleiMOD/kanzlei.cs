@@ -13,6 +13,7 @@ $KZ::dir = "mod/KanzleiMOD";
 $KZ::pageHost = "https://gm.wulpischelande.de";   // the web UI, opened in the game's browser window (https works there)
 $KZ::gameHost = "http://gm.wulpischelande.de";    // the same server for the game's own downloads: the engine downloader has NO TLS, plain http only
 $KZ::chunk = 330;                                 // characters of data per upload request (the engine's URL length limit is unknown: see probe.cs)
+$KZ::iconBase = "";                                // "" = the game folder's art/2D as file:/// (automatic); "none" = no icons; or any address ending in /
 $KZ::pollMs = 1000;                               // how often the game asks the relay for commands while the window is open
 $KZ::godText = "<just:center><font:Arial:15><color:ffd860>GM<font:Arial Bold:30><color:ffe890> GOD";
 if (isFile($KZ::dir @ "/kanzlei_config.cs")) {
