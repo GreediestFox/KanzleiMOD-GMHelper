@@ -8,7 +8,8 @@
   var Q = parseQuery(location.search);
   var DEMO = !!Q.demo;
   // icons: the game passes the address of its own art/2D folder (ib); otherwise the deployment default
-  var ICONS = Q.ib !== undefined ? Q.ib : (CFG.iconBase || '');
+  // a file:/// address cannot be loaded from an http(s) page (the game's browser blocks it), so then the deployment's icon folder is used
+  var ICONS = (Q.ib !== undefined && Q.ib.indexOf('file:') !== 0) ? Q.ib : (CFG.iconBase || '');
   var S = {
     lang: (Q.lang === 'en' || Q.lang === 'de') ? Q.lang : (/^de/i.test(navigator.language || '') ? 'de' : 'en'),
     s: Q.s || '', p: Q.p || '',
