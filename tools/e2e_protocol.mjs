@@ -42,6 +42,7 @@ check("acknowledged commands are gone", r.text.split("\n").filter((l) => l.start
 
 console.log("game -> page");
 await g("/g/push", { s, k, t: "reply", id: "ok", d: "give 241 x5 : done" });
+await g("/g/push", { s, k, t: "dur", d: "241|50|2100|test" }).then((x) => check("dur event accepted", x.status === 200));
 await g("/g/push", { s, k, t: "evil", d: "x" }).then((x) => check("unknown event type refused", x.status === 400));
 let ev = await pj("/p/events", { s, p, after: 0 }, "GET");
 check("page sees the reply event", ev.json.events?.some((e) => e.type === "reply" && e.id === "ok" && e.data.includes("done")), JSON.stringify(ev.json));

@@ -10,7 +10,7 @@ import os, re, shutil, sys
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 SHARED = os.path.join(ROOT, "shared")
 TARGETS = {
-    os.path.join(ROOT, "server", "mods", "LiFx", "KanzleiCore", "data"): ["commands.kz", "ground.kz", "animals.kz"],
+    os.path.join(ROOT, "server", "mods", "LiFx", "KanzleiCore", "data"): ["commands.kz", "ground.kz", "animals.kz", "durability.kz"],
     os.path.join(ROOT, "client", "mod", "KanzleiMOD", "data"): ["commands.kz", "animals.kz", "hidden.kz"],
 }
 VIA = {"server", "slash", "local"}
@@ -82,6 +82,9 @@ def check_simple(name, ncols, idcheck=None):
 nc = check_commands()
 na = check_simple("animals.kz", 3)
 ng = check_simple("ground.kz", 4, r"\d+")
+for n, f in rows("durability.kz", 2):
+    if not re.fullmatch(r"\*|\d+", f[0]) or not re.fullmatch(r"\d+", f[1]):
+        errors.append(f"durability.kz:{n}: expected '<type id or *> TAB <number>'")
 for n, f in rows("hidden.kz", 1):
     if not re.fullmatch(r"\d+(-\d+)?", f[0].strip()):
         errors.append(f"hidden.kz:{n}: bad id range '{f[0]}'")

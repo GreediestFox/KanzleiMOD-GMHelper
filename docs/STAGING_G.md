@@ -41,7 +41,7 @@ Follow `docs/INSTALL.md` section 1 (`wrangler d1 create`, migrations, `wrangler 
 ## 4. Gate – all must pass in the game on the TEST copy before anything goes to R2
 1. `KZProbe();` in the console: send the printed lines. Wanted: openWeb yes, downloader yes, URL limit >= 600 (otherwise lower `$KZ::chunk`), umlaut test ok, icon test (file://) ok.
 2. F6 opens the window, header "Spiel verbunden", the *Alle* tab fills.
-3. Give an item to yourself and to another player: green "Erledigt", item really in the inventory.
+3. Give an item to yourself and to another player at quality 50 and 100: green "Erledigt", item really in the inventory, the reply names the durability used and where it came from, and the value matches a crafted item of that quality (compare in the database).
 4. GOD on / off: "GM GOD" on screen and in the header appears and disappears.
 5. Favourites: pin, reorder, close and reopen: still there.
 6. A non-GM account cannot do anything.

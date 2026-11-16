@@ -377,6 +377,12 @@ function clientCmdKZReply(%status, %text, %last)
    }
 }
 
+// the server's answer to "!kzdur <type> <quality>": durability calculated from the quality (shown read-only in the give dialog)
+function clientCmdKZDur(%type, %quality, %dur, %note)
+{
+   KZ_push("dur", "", %type @ "|" @ %quality @ "|" @ %dur @ "|" @ %note);
+}
+
 function clientCmdKZPlayersBegin()
 {
    $KZ::players = "";
@@ -448,6 +454,14 @@ function KZ_exec(%line)
    }
    if (%id $= "kz_themesave") {
       KZ_themeSave(getField(%line, 1));
+      return;
+   }
+   if (%id $= "kz_dur") {
+      %t = KZ_clean(getField(%line, 1));
+      %q = KZ_clean(getField(%line, 2));
+      if (KZ_isNum(%t) && KZ_isNum(%q) && %t !$= "" && %q !$= "") {
+         gm("kzdur" SPC %t SPC %q);
+      }
       return;
    }
    if (%id $= "kz_players") {

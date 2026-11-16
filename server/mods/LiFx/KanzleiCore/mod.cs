@@ -221,8 +221,15 @@ package LiFxGMCommands
         $KZS::data["cmds"] = LiFxGMCommands::readTable(%dir @ "commands.kz");
         $KZS::data["animals"] = LiFxGMCommands::readTable(%dir @ "animals.kz");
         $KZS::data["ground"] = LiFxGMCommands::readTable(%dir @ "ground.kz");
+        %dt = LiFxGMCommands::readTable(%dir @ "durability.kz");
+        for (%i = 0; %i < getRecordCount(%dt); %i++) {
+            %r = getRecord(%dt, %i);
+            if (getField(%r, 0) !$= "" && getField(%r, 1) > 0) {
+                $KZS::durBase[getField(%r, 0)] = getField(%r, 1);
+            }
+        }
         // internal commands of the framework (not in the registry)
-        %internal = "kzcat kzplayers kzreload kzping";
+        %internal = "kzcat kzplayers kzreload kzping kzdur";
         for (%i = 0; %i < getWordCount(%internal); %i++) {
             $KZS::knownName[$KZS::knownN] = getWord(%internal, %i);
             $KZS::known[getWord(%internal, %i)] = 1;
@@ -429,6 +436,7 @@ package LiFxGMCommands
              || %cmd $= "heal" || %cmd $= "god" || %cmd $= "time" || %cmd $= "weather" || %cmd $= "adminland" || %cmd $= "gmlog" || %cmd $= "inflation" || $KZS::known[%cmd] $= "1");
     }
 
+    // !give / !giveto: the caller chooses the QUALITY; the durability is calculated from it (see calcDurability). A durability typed as the 4th value still wins (override).
     function LiFxGMCommands::giveItem(%caller, %targetClient, %type, %qty, %quality, %dur) {
         if (%type $= "" || %type < 1) {
             LiFxGMCommands::reply(%caller, "Item type id missing.");
@@ -436,12 +444,86 @@ package LiFxGMCommands
         }
         if (%qty $= "" || %qty < 1) { %qty = 1; }
         if (%quality $= "") { %quality = 100; }
-        if (%dur $= "" || %dur < 1) { %dur = 100; }   // durability 0 = broken item: it cannot be equipped and its effects (rings, robes ...) do nothing
+        %quality = LiFxGMCommands::clampQuality(%quality);
         %p = LiFxGMCommands::getPlayer(%targetClient);
         if (!isObject(%p)) {
             LiFxGMCommands::reply(%caller, "No player object found.");
             return;
         }
+        if (%dur $= "" || %dur < 1) {
+            LiFxGMCommands::calcDurability(%caller, %targetClient, %type, %qty, %quality, "give");
+            return;
+        }
+        LiFxGMCommands::giveCore(%caller, %targetClient, %type, %qty, %quality, %dur);
+    }
+
+    function LiFxGMCommands::clampQuality(%q) {
+        if (%q $= "" || %q < 1) { return 1; }
+        if (%q > 100) { return 100; }
+        return mFloor(%q);
+    }
+
+    // ---- durability from quality -------------------------------------------------------------------------------------------------
+    // Item durability is a large number (a blank carries thousands), not 0-100. The game's rule is learned from the game itself: the database holds the
+    // crafted items of the same type; the 5 whose quality is nearest to the wanted one give "durability per quality point" (CreatedDurability / Quality,
+    // averaged), and durability = that x wanted quality. A type that was never crafted falls back to data/durability.kz (base at quality 100, linear;
+    // "*" = default for unlisted types).  The answer says where the number came from.
+    function LiFxGMCommands::durFallback(%type, %quality) {
+        %base = $KZS::durBase[%type];
+        %src = "table";
+        if (%base $= "") {
+            %base = $KZS::durBase["*"];
+            %src = "default";
+        }
+        if (%base $= "") {
+            %base = 1000;
+            %src = "built-in default";
+        }
+        return mFloor(%base * %quality / 100) @ "\t" @ %src @ " (base " @ %base @ ")";
+    }
+
+    // %mode: "give" = hand the item over afterwards, "preview" = only tell the caller's web UI the number
+    function LiFxGMCommands::calcDurability(%caller, %targetClient, %type, %qty, %quality, %mode) {
+        %req = new ScriptObject() {
+            class = "LiFxGMDur";
+            caller = %caller;
+            target = %targetClient;
+            type = %type;
+            qty = %qty;
+            quality = %quality;
+            mode = %mode;
+        };
+        dbi.select(%req, "onDur", "SELECT AVG(t.CreatedDurability / t.Quality) AS per, COUNT(*) AS n FROM (SELECT CreatedDurability, Quality FROM `items` WHERE ObjectTypeID=" @ %type @ " AND Quality>0 AND CreatedDurability>0 ORDER BY ABS(Quality-" @ %quality @ ") LIMIT 5) t");
+    }
+
+    function LiFxGMDur::onDur(%this, %rs) {
+        %per = 0; %n = 0;
+        if (%rs.Ok() && %rs.nextRecord()) {
+            %per = %rs.getFieldValue("per");
+            %n = %rs.getFieldValue("n");
+        }
+        dbi.remove(%rs);
+        if (%n > 0 && %per > 0) {
+            %dur = mFloor(%per * %this.quality);
+            %note = "learned from " @ %n @ " game item(s) of this type";
+        } else {
+            %fb = LiFxGMCommands::durFallback(%this.type, %this.quality);
+            %dur = getField(%fb, 0);
+            %note = getField(%fb, 1);
+        }
+        if (%dur < 1) { %dur = 1; }
+        if (isObject(%this.caller)) {
+            if (%this.mode $= "preview") {
+                commandToClient(%this.caller, 'KZDur', %this.type, %this.quality, %dur, %note);
+            } else if (isObject(%this.target)) {
+                echo("[GM] durability for type" SPC %this.type SPC "quality" SPC %this.quality SPC "=" SPC %dur SPC "(" @ %note @ ")");
+                LiFxGMCommands::giveCore(%this.caller, %this.target, %this.type, %this.qty, %this.quality, %dur);
+            }
+        }
+        %this.delete();
+    }
+
+    function LiFxGMCommands::giveCore(%caller, %targetClient, %type, %qty, %quality, %dur) {
         if (%qty > 1) {
             // items that do not stack (tools, clothes, furniture ...) ignore the quantity: look the stack size up and add them one by one
             %req = new ScriptObject() {
@@ -486,7 +568,7 @@ package LiFxGMCommands
         if (%ok) { LiFxGMCommands::queueEffects(%targetClient, %type, %quality); }
         if (!%report) { return %ok; }
         echo("[GM] account" SPC %caller.getAccountId() SPC "give type" SPC %type SPC "qty" SPC %qty SPC "quality" SPC %quality SPC "durability" SPC %dur SPC "to character" SPC %targetClient.getCharacterId() SPC "->" SPC %ok);
-        LiFxGMCommands::reply(%caller, "give" SPC %type SPC "x" @ %qty SPC "quality" SPC %quality SPC "to character" SPC %targetClient.getCharacterId() SPC ":" SPC (%ok ? "done" : "failed (no space or unknown item type?)"));
+        LiFxGMCommands::reply(%caller, "give" SPC %type SPC "x" @ %qty SPC "quality" SPC %quality SPC "durability" SPC %dur SPC "to character" SPC %targetClient.getCharacterId() SPC ":" SPC (%ok ? "done" : "failed (no space or unknown item type?)"));
         return %ok;
     }
 
@@ -998,6 +1080,15 @@ package LiFxGMCommands
         if (%cmd $= "kzreload") {
             LiFxGMCommands::loadData();
             LiFxGMCommands::reply(%client, "Data files reloaded (commands.kz, ground.kz, animals.kz).");
+            return 1;
+        }
+
+        if (%cmd $= "kzdur") {
+            %t = getWord(%message, 1);
+            if (%t $= "" || stripChars(%t, "0123456789") !$= "") {
+                return 1;
+            }
+            LiFxGMCommands::calcDurability(%client, %client, %t, 1, LiFxGMCommands::clampQuality(getWord(%message, 2)), "preview");
             return 1;
         }
 
