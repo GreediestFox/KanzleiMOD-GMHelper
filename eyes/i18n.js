@@ -2,6 +2,7 @@
 window.KZ_I18N = {
   en: {
     theme: "Theme", theme_title: "Colours", theme_hud: "HUD", theme_light: "Light", theme_mono: "Dark mono", theme_custom: "Custom", c_bg: "Background", c_text: "Text", c_a1: "Highlight 1", c_a2: "Highlight 2", theme_reset: "Back to HUD", theme_hint: "Type a colour like #ff6b3d, or use the picker. The choice is remembered.",
+    dur_label: "Durability (calculated from the quality)", dur_wait: "calculating ...",
     search_ph: "Search commands, items, buildings, objects, animals ...", tab_fav: "Favourites", tab_all: "All",
     conn_on: "Game connected", conn_off: "Game not answering", conn_wait: "Waiting for the game ...",
     ok: "Done", err: "Failed", sent: "Sent", log: "Log", log_hide: "Hide log", log_empty: "Nothing yet.",
@@ -19,6 +20,7 @@ window.KZ_I18N = {
   },
   de: {
     theme: "Farben", theme_title: "Farbschema", theme_hud: "HUD", theme_light: "Hell", theme_mono: "Dunkel (Mono)", theme_custom: "Eigene", c_bg: "Hintergrund", c_text: "Text", c_a1: "Hervorhebung 1", c_a2: "Hervorhebung 2", theme_reset: "Zur\u00fcck zu HUD", theme_hint: "Farbe wie #ff6b3d eintippen oder mit der Auswahl w\u00e4hlen. Die Wahl wird gemerkt.",
+    dur_label: "Haltbarkeit (aus der Qualit\u00e4t berechnet)", dur_wait: "wird berechnet ...",
     search_ph: "Befehle, Gegenstände, Gebäude, Objekte, Tiere suchen ...", tab_fav: "Favoriten", tab_all: "Alle",
     conn_on: "Spiel verbunden", conn_off: "Spiel antwortet nicht", conn_wait: "Warte auf das Spiel ...",
     ok: "Erledigt", err: "Fehler", sent: "Gesendet", log: "Protokoll", log_hide: "Protokoll schließen", log_empty: "Noch nichts.",

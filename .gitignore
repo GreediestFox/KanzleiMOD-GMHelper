@@ -5,3 +5,4 @@ relay/.wrangler/
 client/mod/KanzleiMOD/cache/
 client/mod/KanzleiMOD/kanzlei_config.cs
 server/mods/LiFx/KanzleiCore/steamids.live.cs
+dist/

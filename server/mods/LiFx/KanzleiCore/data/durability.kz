@@ -1,0 +1,5 @@
+# Fallback durability for item types that were never crafted (so the server cannot learn the value from the game's own items).
+# TAB separated: item type id (or * = every type not listed) | durability at quality 100.  Durability for another quality = base x quality / 100.
+# The first line with * is the default.  PLACEHOLDER VALUE: adjust after checking a freshly crafted item in the database
+#   (SELECT ObjectTypeID, Quality, CreatedDurability FROM items WHERE ObjectTypeID=<id> LIMIT 5;)
+*	1000

@@ -367,8 +367,8 @@ function GMPanel_build()
    GMPanel_edit(%win, GMP_itemQty, "1", 94, 82, 60);
    GMPanel_label(%win, "quality", 164, 64, 60);
    GMPanel_edit(%win, GMP_itemQuality, "100", 164, 82, 60);
-   GMPanel_label(%win, "durability", 234, 64, 70);
-   GMPanel_edit(%win, GMP_itemDur, "100", 234, 82, 60);
+   GMPanel_label(%win, "dur (empty=auto)", 234, 64, 70);
+   GMPanel_edit(%win, GMP_itemDur, "", 234, 82, 60);
    GMPanel_button(%win, "Give to me", "GMPanel_giveMe();", 310, 80, 110);
    GMPanel_button(%win, "Delete (qty) from me", "GMPanel_deleteMe();", 430, 80, 160);
    GMPanel_label(%win, "player (char id or name)", 24, 112, 200);

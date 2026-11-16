@@ -4,8 +4,8 @@
 #   template placeholders {name} are filled from args; the client Core renders the text itself (the web page only sends id + values).
 #   args     comma separated  name:type[=default][?]   types: item building object thing animal ground player int text word choice(a|b|c)   '?' = may stay empty
 #   Lines starting with # are comments. Run tools/kz_sync.py after editing: it validates and copies the file to the server and client folders.
-give	Items	server	!give {type} {qty} {quality} {dur}	type:item,qty:int=1,quality:int=100,dur:int=100	Give item to me	Gegenstand an mich geben	item add spawn
-giveto	Items	server	!giveto {who} {type} {qty} {quality} {dur}	who:player,type:item,qty:int=1,quality:int=100,dur:int=100	Give item to a player	Gegenstand an Spieler geben	item add
+give	Items	server	!give {type} {qty} {quality}	type:item,qty:int=1,quality:int=100	Give item to me (durability follows quality)	Gegenstand an mich geben (Haltbarkeit folgt der Qualitaet)	item add spawn
+giveto	Items	server	!giveto {who} {type} {qty} {quality}	who:player,type:item,qty:int=1,quality:int=100	Give item to a player (durability follows quality)	Gegenstand an Spieler geben (Haltbarkeit folgt der Qualitaet)	item add
 delete	Items	server	!delete {type} {qty}	type:item,qty:int=1	Delete items from my inventory	Gegenstaende aus meinem Inventar loeschen	remove
 addweapons	Items	slash	/ADDWEAPONS		Add all weapons	Alle Waffen hinzufuegen	
 addtools	Items	slash	/ADDTOOLS		Add all tools	Alle Werkzeuge hinzufuegen	

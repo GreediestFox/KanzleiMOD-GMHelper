@@ -15,7 +15,7 @@
     cmds: [], cmdById: {}, catalog: [], cats: {}, animals: [], ground: [], players: [],
     favs: [], favLoaded: false, god: false, gameAge: -1, evAfter: 0,
     ent: {}, list: [], bySection: { c: [], i: [], b: [], m: [], a: [], g: [] },
-    tab: 'fav', section: 'c', claimTries: 0, themeLoaded: false, allCat: '', allFilter: '', catalogN: 0, dead: false, log: []
+    tab: 'fav', section: 'c', claimTries: 0, durWant: null, themeLoaded: false, allCat: '', allFilter: '', catalogN: 0, dead: false, log: []
   };
   var SECTIONS = ['c', 'i', 'b', 'm', 'a', 'g'];
   var DANGER = { ban: 1, kick: 1, delobj: 1, 'delete': 1, adminland_delete: 1, kzreload: 1 };
@@ -168,6 +168,7 @@
     var d = ev.data || '';
     if (ev.type === 'reply') { var lines2 = d.split('\\n'); logMsg(ev.id === 'err' ? 'err' : ev.id === 'ok' ? 'ok' : 'sent', lines2.join(' · ')); }
     else if (ev.type === 'info') logMsg('sent', d);
+    else if (ev.type === 'dur') { var df = d.split('|'); if (S.durWant && S.durWant.type === df[0] && String(S.durWant.q) === df[1]) { clear(S.durWant.el).appendChild(document.createTextNode('\u2248 ' + df[2] + '   (' + (df[3] || '') + ')')); } }
     else if (ev.type === 'god') { S.god = ev.id === 'on'; $('god').style.display = S.god ? '' : 'none'; }
     else if (ev.type === 'players') { S.players = []; var a = d.split(';'); for (var i = 0; i < a.length; i++) { var f = a[i].split('|'); if (f[0]) S.players.push({ id: f[0], name: f[1] || f[0] }); } }
     else if (ev.type === 'fav') {
@@ -496,11 +497,22 @@
       var first = body.querySelector('input'); if (first) first.focus();
       body.onkeydown = function (ev) { if (ev.keyCode === 13) go(); };
     } else if (e.kind === 'i') {
-      var form2 = buildForm([{ name: 'qty', type: 'int', def: '1', opt: false }, { name: 'quality', type: 'int', def: '100', opt: false }, { name: 'dur', type: 'int', def: '100', opt: false }]);
-      var who = playerField(t('give_to')), body2 = el('div', { 'class': 'm-body' }, [entHead(e), form2.el, who.el]);
-      var send = function (toPlayer) { var v = form2.values(); if (!v) return; if (toPlayer) { var w = who.value(); if (!w) { who.el.className = 'field bad'; return; } run('giveto', [w, e.id, v[0], v[1], v[2]]); } else run('give', [e.id, v[0], v[1], v[2]]); };
-      m = modal('small', e.name, body2, foot([btn(t('cancel'), false, function () { m.close(); }), btn(t('give_to'), false, function () { send(true); }), btn(t('give_me'), true, function () { send(false); })]));
-      form2.fields[0].input.focus();
+      // quality is chosen here; the durability is calculated by the server from it (learned from the game's own items) and only shown
+      var form2 = buildForm([{ name: 'qty', type: 'int', def: '1', opt: false }, { name: 'quality', type: 'int', def: '100', opt: false }]);
+      var qIn = form2.fields[1].input, slider = el('input', { type: 'range', min: '1', max: '100', value: '100', style: 'width:100%;margin:2px 0 6px' });
+      var presets = el('div', { 'class': 'seg', style: 'margin:0 0 8px' }), durLine = el('div', { 'class': 'note durline', text: t('dur_wait') });
+      function curQ() { var q = parseInt(qIn.value, 10); if (isNaN(q)) return 0; return q < 1 ? 1 : (q > 100 ? 100 : q); }
+      var durTimer = 0;
+      function askDur() { var q = curQ(); if (!q) return; clearTimeout(durTimer); durTimer = setTimeout(function () { S.durWant = { type: e.id, q: q, el: durLine }; clear(durLine).appendChild(document.createTextNode(t('dur_wait'))); transport.send('kz_dur', [e.id, String(q)], true); }, 450); }
+      function setQ(q) { qIn.value = String(q); slider.value = String(q); askDur(); }
+      qIn.oninput = function () { var q = curQ(); if (q) slider.value = String(q); askDur(); };
+      slider.oninput = slider.onchange = function () { qIn.value = slider.value; askDur(); };
+      var ps = [25, 50, 75, 100]; for (var pi = 0; pi < ps.length; pi++) (function (v) { presets.appendChild(el('button', { type: 'button', text: String(v), onclick: function () { setQ(v); } })); })(ps[pi]);
+      form2.fields[1].el.appendChild(slider); form2.fields[1].el.appendChild(presets);
+      var who = playerField(t('give_to')), body2 = el('div', { 'class': 'm-body' }, [entHead(e), form2.el, el('div', { 'class': 'field' }, [el('label', { text: t('dur_label') }), durLine]), who.el]);
+      var send = function (toPlayer) { var v = form2.values(); if (!v) return; var q = String(curQ() || 100); if (toPlayer) { var w = who.value(); if (!w) { who.el.className = 'field bad'; return; } run('giveto', [w, e.id, v[0], q]); } else run('give', [e.id, v[0], q]); };
+      m = modal('small', e.name, body2, foot([btn(t('cancel'), false, function () { m.close(); }), btn(t('give_to'), false, function () { send(true); }), btn(t('give_me'), true, function () { send(false); })]), function () { clearTimeout(durTimer); S.durWant = null; });
+      form2.fields[0].input.focus(); askDur();
     } else if (e.kind === 'b' || e.kind === 'm') {
       m = modal('small', e.name, el('div', { 'class': 'm-body' }, [entHead(e), el('div', { 'class': 'note', text: t('create') })]), foot([btn(t('cancel'), false, function () { m.close(); }), btn(t('create'), true, function () { run('place', [e.id]); m.close(); })]));
     } else if (e.kind === 'a') {
@@ -574,6 +586,7 @@
     transport.start = function () { logMsg('sent', t('demo_note')); };
     transport.send = function (cmd, args, quiet) {
       if (!quiet) logMsg('sent', cmd + ' ' + args.join(' '));
+      if (cmd === 'kz_dur') { setTimeout(function () { handleEvent({ type: 'dur', id: '', data: args[0] + '|' + args[1] + '|' + (parseInt(args[1], 10) * 42) + '|demo: learned from 5 game item(s)' }); }, 300); return; }
       if (cmd.indexOf('kz_') === 0) return;
       setTimeout(function () {
         if (cmd === 'godon') handleEvent({ type: 'god', id: 'on' }); else if (cmd === 'godoff') handleEvent({ type: 'god', id: 'off' });
