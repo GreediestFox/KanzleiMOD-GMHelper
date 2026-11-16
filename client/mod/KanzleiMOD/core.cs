@@ -413,6 +413,25 @@ function KZ_favSave(%list)
    KZ_writeFile(KZ_favFile(), %list);
 }
 
+// the chosen colour scheme of the web UI ("name;bg;text;a1;a2"), kept like the favourites in a client file
+function KZ_themeFile()
+{
+   return $KZ::dir @ "/cache/theme.txt";
+}
+
+function KZ_themeSave(%s)
+{
+   %s = KZ_clean(getSubStr(%s, 0, 80));
+   KZ_writeFile(KZ_themeFile(), %s);
+}
+
+function KZ_pushTheme()
+{
+   if (isFile(KZ_themeFile())) {
+      KZ_uploadBlob("theme", trim(getRecord(KZ_readFile(KZ_themeFile()), 0)) @ "\n", "");
+   }
+}
+
 function KZ_pushFavs()
 {
    KZ_favLoad();
@@ -425,6 +444,10 @@ function KZ_exec(%line)
    %id = getField(%line, 0);
    if (%id $= "kz_favsave") {
       KZ_favSave(getField(%line, 1));
+      return;
+   }
+   if (%id $= "kz_themesave") {
+      KZ_themeSave(getField(%line, 1));
       return;
    }
    if (%id $= "kz_players") {
@@ -651,6 +674,7 @@ function KZ_sendAll()
    schedule(6000, 0, "KZ_dataFallback");
    KZBrain_start("KZ_catalogReady");                  // items / buildings / objects from the game files
    KZ_pushFavs();
+   KZ_pushTheme();
    gm("kzplayers");
    KZ_push("god", $KZ::god ? "on" : "off", "");
 }

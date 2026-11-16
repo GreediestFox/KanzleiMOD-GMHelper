@@ -15,10 +15,11 @@
     cmds: [], cmdById: {}, catalog: [], cats: {}, animals: [], ground: [], players: [],
     favs: [], favLoaded: false, god: false, gameAge: -1, evAfter: 0,
     ent: {}, list: [], bySection: { c: [], i: [], b: [], m: [], a: [], g: [] },
-    tab: 'fav', section: 'c', claimTries: 0, allCat: '', allFilter: '', catalogN: 0, dead: false, log: []
+    tab: 'fav', section: 'c', claimTries: 0, themeLoaded: false, allCat: '', allFilter: '', catalogN: 0, dead: false, log: []
   };
+  var SECTIONS = ['c', 'i', 'b', 'm', 'a', 'g'];
   var DANGER = { ban: 1, kick: 1, delobj: 1, 'delete': 1, adminland_delete: 1, kzreload: 1 };
-  var KIND_COLOR = { c: '#6a5a2c', i: '#4a6a3c', b: '#6a3c3c', m: '#3c4f6a', a: '#5a3c6a', g: '#6a5a3c' };
+  var KIND_CODE = { c: 'CMD', i: 'ITM', b: 'BLD', m: 'OBJ', a: 'ANI', g: 'GND' };
   var CAT_GLYPH = { Items: '⚒', Objects: '▣', Ground: '◢', Player: '♥', Players: '☺', Teleport: '➤', Moderation: '⚖', World: '☀', Economy: '¤', System: '⚙' };
 
   /* ---------------------------------------------------------------- helpers */
@@ -54,7 +55,6 @@
   function glyphOf(e) { var g = e.kind === 'c' ? (CAT_GLYPH[e.sub] || '✦') : String(e.name || '?').charAt(0).toUpperCase(); return g; }
   function iconNode(e, cls) {
     var box = el('div', { 'class': cls || 'ico' });
-    box.style.background = KIND_COLOR[e.kind] || '#444';
     box.appendChild(document.createTextNode(glyphOf(e)));
     if (e.icon && ICONS) {
       var img = new Image();
@@ -109,6 +109,7 @@
     for (i = 0; i < S.animals.length; i++) add({ kind: 'a', id: S.animals[i][0], name: S.lang === 'de' ? (S.animals[i][2] || S.animals[i][1]) : S.animals[i][1], sub: t('sec_a'), kw: S.animals[i][0] });
     for (i = 0; i < S.ground.length; i++) add({ kind: 'g', id: S.ground[i][0], name: S.lang === 'de' ? (S.ground[i][3] || S.ground[i][2]) : S.ground[i][2], sub: t('sec_g'), kw: S.ground[i][0] });
     S.ent = ent; S.list = list; S.bySection = sec;
+    var st = clear($('stats')); for (var kk = 0; kk < SECTIONS.length; kk++) { var kb = el('b'); kb.appendChild(document.createTextNode(KIND_CODE[SECTIONS[kk]] + ' ' + sec[SECTIONS[kk]].length)); st.appendChild(kb); }
     for (var k in sec) sec[k].sort(function (a, b) { return a.nameN < b.nameN ? -1 : a.nameN > b.nameN ? 1 : 0; });
   }
   function lev1(a, b) { // true when a and b differ by at most one edit
@@ -176,6 +177,7 @@
   }
   function loadBlob(name, hash) {
     transport.blob(name, hash, function (txt) {
+      if (name === 'theme') { if (!S.themeLoaded) { S.themeLoaded = true; var tt = txt.replace(/\s+$/, ''); if (tt) { window.KZTheme.load(tt); try { localStorage.setItem('kz_theme', window.KZTheme.serialize()); } catch (e) { } } } return; }
       if (name === 'fav') { if (!S.favLoaded) { S.favLoaded = true; var f = txt.replace(/\s+$/, ''); S.favs = f ? f.split(',') : []; try { localStorage.setItem('kz_favs', S.favs.join(',')); } catch (e) { } refreshView(); } return; }
       if (name === 'cmds') parseCommands(txt);
       else if (name === 'catalog') parseCatalog(txt);
@@ -225,8 +227,9 @@
   }
   function applyLang() {
     document.documentElement.lang = S.lang; $('q').placeholder = t('search_ph');
-    var tabs = document.querySelectorAll('.tab'); for (var i = 0; i < tabs.length; i++) tabs[i].firstChild ? tabs[i].firstChild.nodeValue = t('tab_' + tabs[i].getAttribute('data-tab')) : tabs[i].appendChild(document.createTextNode(t('tab_' + tabs[i].getAttribute('data-tab'))));
+    var tabs = document.querySelectorAll('.tab'); for (var i = 0; i < tabs.length; i++) clear(tabs[i].querySelector('.tl')).appendChild(document.createTextNode(t('tab_' + tabs[i].getAttribute('data-tab'))));
     clear($('lang')).appendChild(document.createTextNode(t('lang_btn')));
+    clear($('theme')).appendChild(document.createTextNode('\u25D0 ' + t('theme')));
     var tg = clear($('bar-toggle')); tg.appendChild(document.createTextNode($('bar-log').style.display === 'none' ? t('log') : t('log_hide')));
     rebuild(); setConn(); refreshView();
   }
@@ -260,10 +263,11 @@
   function card(e, opts) {
     opts = opts || {};
     var fav = isFav(e);
-    var c = el('div', { 'class': 'card' + (opts.fav ? ' fav' : ''), 'data-key': e.key, title: e.name + (e.sub ? '  ·  ' + e.sub : '') + '  ·  ' + (e.kind === 'c' ? e.id : '#' + e.id) });
+    var c = el('div', { 'class': 'card k-' + e.kind + (opts.fav ? ' fav' : ''), 'data-key': e.key, title: e.name + (e.sub ? '  ·  ' + e.sub : '') + '  ·  ' + (e.kind === 'c' ? e.id : '#' + e.id) });
     c.appendChild(iconNode(e));
+    c.appendChild(el('div', { 'class': 'code', text: KIND_CODE[e.kind] }));
     c.appendChild(el('div', { 'class': 'nm', text: e.name }));
-    c.appendChild(el('div', { 'class': 'sub', text: e.kind === 'c' ? e.sub : ((e.sub ? e.sub + ' · ' : '') + '#' + e.id) }));
+    c.appendChild(el('div', { 'class': 'sub', text: e.kind === 'c' ? e.sub : ('#' + e.id + (e.sub ? ' · ' + e.sub : '')) }));
     var st = el('button', { type: 'button', 'class': 'star' + (fav ? ' on' : ''), title: fav ? t('fav_del') : t('fav_add'), text: fav ? '★' : '☆' });
     st.onclick = function (ev) { ev.stopPropagation(); toggleFav(e); if (opts.onFav) opts.onFav(); };
     st.onmousedown = function (ev) { ev.stopPropagation(); };
@@ -345,7 +349,6 @@
     }
   }
 
-  var SECTIONS = ['c', 'i', 'b', 'm', 'a', 'g'];
   function renderAll() {
     var v = clear($('view')); v.className = ''; var wrap = el('div', { 'class': 'view-flex' }); v.appendChild(wrap);
     var seg = el('div', { 'class': 'seg' }), i;
@@ -507,6 +510,49 @@
     }
   }
 
+  /* ---------------------------------------------------------------- theme window */
+  function themeSave() {
+    var s = window.KZTheme.serialize();
+    try { localStorage.setItem('kz_theme', s); } catch (e) { }
+    transport.send('kz_themesave', [s], true);
+  }
+  function openTheme() {
+    var KT = window.KZTheme, body = el('div', { 'class': 'm-body' }), tiles = el('div', { 'class': 'themes' }), custom = el('div'), tileEls = {};
+    var names = ['hud', 'light', 'mono', 'custom'], m;
+    function mark() { var cur = KT.get().name; for (var k in tileEls) tileEls[k].className = 'tile' + (k === cur ? ' on' : ''); }
+    function preview(nm) {
+      var b = KT.base(nm), pv = el('div', { 'class': 'pv' }, [el('i'), el('i'), el('b', { text: 'Aa' })]);
+      pv.style.background = b.bg; pv.style.color = b.text; pv.children[0].style.background = b.a1; pv.children[0].style.width = '70%'; pv.children[1].style.background = b.a2; pv.children[1].style.width = '45%';
+      return pv;
+    }
+    function buildTiles() {
+      clear(tiles); tileEls = {};
+      for (var i = 0; i < names.length; i++) (function (nm) {
+        var tile = el('button', { type: 'button', 'class': 'tile' }, [preview(nm), el('div', { 'class': 'tn', text: t('theme_' + nm) })]);
+        tile.onclick = function () { KT.set(nm); themeSave(); buildTiles(); };
+        tiles.appendChild(tile); tileEls[nm] = tile;
+      })(names[i]);
+      mark();
+    }
+    var colorOk = (function () { try { var x = document.createElement('input'); x.setAttribute('type', 'color'); return x.type === 'color'; } catch (e) { return false; } })();
+    function row(key) {
+      var cur = KT.get().custom[key], txt = el('input', { type: 'text', maxlength: '7', value: cur }), sw = el('div', { 'class': 'sw' }), pick = null;
+      sw.style.background = cur;
+      function set(v) { if (!KT.validHex(v)) return; if (v.charAt(0) !== '#') v = '#' + v; var o = {}; o[key] = v; var c = KT.get().custom; for (var k in c) if (k !== key) o[k] = c[k]; KT.set('custom', o); sw.style.background = v; if (pick) pick.value = v.length === 7 ? v : pick.value; themeSave(); buildTiles(); }
+      txt.oninput = function () { var v = txt.value; if (/^#?[0-9a-fA-F]{6}$/.test(v) || /^#?[0-9a-fA-F]{3}$/.test(v)) set(v); };
+      var kids = [el('label', { text: t('c_' + key) }), txt];
+      if (!colorOk) kids.push(sw);
+      if (colorOk) { pick = el('input', { type: 'color', value: cur.length === 7 ? cur : '#000000' }); pick.oninput = pick.onchange = function () { txt.value = pick.value; set(pick.value); }; kids.push(pick); }
+      return el('div', { 'class': 'crow' }, kids);
+    }
+    body.appendChild(tiles);
+    custom.appendChild(el('div', { 'class': 'note', text: t('theme_hint'), style: 'margin:4px 0 10px' }));
+    var keys = ['bg', 'text', 'a1', 'a2']; for (var i = 0; i < keys.length; i++) custom.appendChild(row(keys[i]));
+    body.appendChild(custom);
+    buildTiles();
+    m = modal('small', t('theme_title'), body, foot([btn(t('theme_reset'), false, function () { KT.set('hud'); themeSave(); m.close(); openTheme(); }), btn(t('close'), true, function () { m.close(); })]));
+  }
+
   /* ---------------------------------------------------------------- demo transport (no game needed) */
   if (DEMO) {
     (function () {
@@ -542,6 +588,7 @@
     if (!DEMO && (!S.s || !S.p)) { document.body.innerHTML = '<div style="padding:40px;font:16px sans-serif;color:#e3d9bd">Kanzlei GM &ndash; open this page from the game (F6). / Diese Seite im Spiel mit F6 öffnen.<br><br><a style="color:#c8a84b" href="?demo=1">Demo</a></div>'; return; }
     if (!S.favLoaded && !DEMO) { try { var f = localStorage.getItem('kz_favs'); if (f) S.favs = f.split(','); } catch (e) { } }
     $('demo-flag').style.display = DEMO ? '' : 'none';
+    $('theme').onclick = openTheme;
     $('lang').onclick = function () { S.lang = S.lang === 'de' ? 'en' : 'de'; searchCache = {}; applyLang(); };
     var tabs = document.querySelectorAll('.tab'); for (var i = 0; i < tabs.length; i++) tabs[i].onclick = function () { setTab(this.getAttribute('data-tab')); };
     $('q').onkeydown = function (ev) { if (ev.keyCode === 13 && this.value.replace(/\s/g, '')) { openResults(this.value); this.value = ''; } };
