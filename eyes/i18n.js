@@ -1,0 +1,35 @@
+// UI texts. Game data names (items, objects, commands) come localised from the game itself (Brain), these are only the page's own words.
+window.KZ_I18N = {
+  en: {
+    search_ph: "Search commands, items, buildings, objects, animals ...", tab_fav: "Favourites", tab_all: "All",
+    conn_on: "Game connected", conn_off: "Game not answering", conn_wait: "Waiting for the game ...",
+    ok: "Done", err: "Failed", sent: "Sent", log: "Log", log_hide: "Hide log", log_empty: "Nothing yet.",
+    fav_empty_t: "No favourites yet", fav_empty: "Open the tab \"All\" and click the grey star on anything you want to keep here. Drag the tiles to sort them.",
+    fav_add: "Add to favourites", fav_del: "Remove from favourites", move_l: "Move left", move_r: "Move right",
+    sec_c: "Commands", sec_i: "Items", sec_b: "Buildings", sec_m: "Objects", sec_a: "Animals", sec_g: "Ground",
+    all_cats: "All categories", filter_ph: "Filter this list ...",
+    results: "Search results", results_n: "results", of: "of", page: "Page", prev: "Previous", next: "Next", none: "Nothing found.", close: "Close",
+    f_all: "All", run: "Run", cancel: "Cancel", give_me: "Give to me", give_to: "Give to player", create: "Create 1 tile in front of me", spawn: "Spawn",
+    qty: "Quantity", quality: "Quality", dur: "Durability", player: "Player", me: "me (empty)", refresh: "Refresh", pick_player: "choose ...",
+    req: "required", need_num: "needs a number", need_word: "one word only", confirm: "Really run this?",
+    catalog_wait: "Loading the game's item list ...", catalog_n: "entries loaded", session_gone: "This session has ended. Press F6 in the game to open a fresh one.",
+    queue_full: "The game is not picking up commands. Is it running?", god_on: "Invulnerable", ground_mat: "Material", animal: "Animal",
+    sections_none: "(not loaded yet)", id: "ID", cat: "Category", lang_btn: "Deutsch", demo_note: "Demo data - not connected to a game."
+  },
+  de: {
+    search_ph: "Befehle, Gegenstände, Gebäude, Objekte, Tiere suchen ...", tab_fav: "Favoriten", tab_all: "Alle",
+    conn_on: "Spiel verbunden", conn_off: "Spiel antwortet nicht", conn_wait: "Warte auf das Spiel ...",
+    ok: "Erledigt", err: "Fehler", sent: "Gesendet", log: "Protokoll", log_hide: "Protokoll schließen", log_empty: "Noch nichts.",
+    fav_empty_t: "Noch keine Favoriten", fav_empty: "Öffne den Reiter \"Alle\" und klicke den grauen Stern bei allem, was hier liegen soll. Ziehe die Kacheln, um sie zu sortieren.",
+    fav_add: "Zu Favoriten", fav_del: "Aus Favoriten entfernen", move_l: "Nach links", move_r: "Nach rechts",
+    sec_c: "Befehle", sec_i: "Gegenstände", sec_b: "Gebäude", sec_m: "Objekte", sec_a: "Tiere", sec_g: "Boden",
+    all_cats: "Alle Kategorien", filter_ph: "Diese Liste filtern ...",
+    results: "Suchergebnisse", results_n: "Treffer", of: "von", page: "Seite", prev: "Zurück", next: "Weiter", none: "Nichts gefunden.", close: "Schließen",
+    f_all: "Alle", run: "Ausführen", cancel: "Abbrechen", give_me: "An mich geben", give_to: "An Spieler geben", create: "1 Feld vor mir erstellen", spawn: "Spawnen",
+    qty: "Menge", quality: "Qualität", dur: "Haltbarkeit", player: "Spieler", me: "ich (leer lassen)", refresh: "Aktualisieren", pick_player: "auswählen ...",
+    req: "erforderlich", need_num: "braucht eine Zahl", need_word: "nur ein Wort", confirm: "Wirklich ausführen?",
+    catalog_wait: "Die Gegenstandsliste des Spiels wird geladen ...", catalog_n: "Einträge geladen", session_gone: "Diese Sitzung ist beendet. Im Spiel F6 drücken, um eine neue zu öffnen.",
+    queue_full: "Das Spiel holt keine Befehle ab. Läuft es?", god_on: "Unverwundbar", ground_mat: "Material", animal: "Tier",
+    sections_none: "(noch nicht geladen)", id: "ID", cat: "Kategorie", lang_btn: "English", demo_note: "Demodaten - nicht mit einem Spiel verbunden."
+  }
+};

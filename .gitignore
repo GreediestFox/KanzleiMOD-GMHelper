@@ -1,0 +1,7 @@
+node_modules/
+.wrangler/
+relay/.wrangler/
+*.dso
+client/mod/KanzleiMOD/cache/
+client/mod/KanzleiMOD/kanzlei_config.cs
+server/mods/LiFx/KanzleiCore/steamids.live.cs

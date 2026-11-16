@@ -1,0 +1,20 @@
+# Animals the GM can spawn with /ANIMAL. TAB separated: datablock | label_en | label_de.  Add a line to add an animal; run tools/kz_sync.py.
+# Order = order in the list. Datablock names come from the game's animal datablocks (ChieftainData ... are the Daniel / Jorvik additions).
+BoarData	Boar	Wildschwein
+WolfData	Wolf	Wolf
+BearData	Bear	Baer
+MooseData	Moose	Elch
+DeerMaleData	Deer (male)	Hirsch
+HindData	Hind	Hirschkuh
+HareData	Hare	Hase
+GrouseData	Grouse	Auerhuhn
+AurochsBullData	Aurochs bull	Auerochse (Bulle)
+AurochsCowData	Aurochs cow	Auerochse (Kuh)
+SowData	Sow	Sau
+MuttonData	Sheep	Schaf
+WildHorseData	Wild horse	Wildpferd
+ChieftainData	Chieftain	Haeuptling
+WitchData	Witch	Hexe
+HunterData	Hunter	Jaeger
+MoleData	Mole	Maulwurf
+BearKnoolData	Knool bear	Knool-Baer
