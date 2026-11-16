@@ -149,7 +149,7 @@ package LiFxGMCommands
     }
 
     function LiFxGMCommands::version() {
-        return "0.14.0-kanzlei";
+        return "0.14.0-kanzlei (KanzleiMOD 0.3.0-test1)";
     }
 
     function LiFxGMCommands::reply(%client, %text) {
