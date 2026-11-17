@@ -383,6 +383,38 @@ function clientCmdKZDur(%type, %quality, %dur, %note)
    KZ_push("dur", "", %type @ "|" @ %quality @ "|" @ %dur @ "|" @ %note);
 }
 
+// Economy tab, live values (every 15 s): the rows "H|time|cu|si|au|players|baseline" and "I|type|stock|stacks" go to the page as one event
+function clientCmdKZEcoBegin()
+{
+   $KZ::ecoLive = "";
+}
+
+function clientCmdKZEcoRow(%row)
+{
+   $KZ::ecoLive = ($KZ::ecoLive $= "") ? %row : $KZ::ecoLive @ ";" @ %row;
+}
+
+function clientCmdKZEcoEnd()
+{
+   KZ_push("eco", "", $KZ::ecoLive);
+}
+
+// Economy tab, item history ("type|date|stock|stacks", an empty date = tracked but no snapshot yet) -> blob "ecoitems"
+function clientCmdKZEcoItemsBegin()
+{
+   $KZ::ecoItems = "";
+}
+
+function clientCmdKZEcoItemsRow(%row)
+{
+   $KZ::ecoItems = $KZ::ecoItems @ %row @ "\n";
+}
+
+function clientCmdKZEcoItemsEnd()
+{
+   KZ_uploadBlob("ecoitems", ($KZ::ecoItems $= "") ? "\n" : $KZ::ecoItems, "");
+}
+
 function clientCmdKZPlayersBegin()
 {
    $KZ::players = "";
@@ -465,7 +497,12 @@ function KZ_exec(%line)
       return;
    }
    if (%id $= "kz_eco") {
-      gm("inflation export");
+      if (getField(%line, 1) $= "live") {
+         gm("kzecolive");                 // small, every 15 s while the dashboard is open: coin totals + stock of the tracked items
+      } else {
+         gm("inflation export");          // coin history  -> blob "economy"
+         gm("kzecoitems");                // item history  -> blob "ecoitems"
+      }
       return;
    }
    if (%id $= "kz_players") {
@@ -670,6 +707,39 @@ function KZ_iconParam()
    return "&ib=" @ KZ_enc(%b);
 }
 
+// The browser window of the web UI: placed on the right, made movable, and moved into the game's HUD so the game behind it stays usable.
+// What the engine allows is unknown (see KZProbe); every step is guarded, and  $KZ::webDock = 0  /  $KZ::webMove = 0  in kanzlei_config.cs switch it off.
+function KZ_prepareWeb(%ctrl)
+{
+   if (!isObject(%ctrl)) {
+      return;
+   }
+   echo("[Kanzlei] web window:" SPC %ctrl.getClassName() SPC "parent" SPC (isObject(%ctrl.getGroup()) ? %ctrl.getGroup().getClassName() : "none") SPC "position" SPC %ctrl.position SPC "extent" SPC %ctrl.extent);
+   %cw = getWord(Canvas.getExtent(), 0);
+   %ch = getWord(Canvas.getExtent(), 1);
+   %w = $KZ::webW;
+   %h = $KZ::webH;
+   if (%w > %cw - 20) { %w = %cw - 20; }
+   if (%h > %ch - 20) { %h = %ch - 20; }
+   %x = (%cw - %w - 16);
+   %y = 40;
+   if ($KZ::webMove) {
+      %ctrl.canMove = 1;
+      %ctrl.resizeWidth = 1;
+      %ctrl.resizeHeight = 1;
+      %ctrl.resize(%x, %y, %w, %h);
+   }
+   if ($KZ::webDock && isObject(PlayGui)) {
+      %old = %ctrl.getGroup();
+      if (isObject(%old) && %old.getId() != PlayGui.getId()) {
+         PlayGui.add(%ctrl);                       // a child of the HUD behaves like the game's own windows (inventory, skills)
+         if (isObject(%old) && %old.getClassName() $= "GuiControl" && %old.getCount() == 0) {
+            Canvas.popDialog(%old);
+         }
+      }
+   }
+}
+
 function KZ_openUi()
 {
    KZ_newSession();
@@ -678,6 +748,7 @@ function KZ_openUi()
    $KZ::web = openWeb(%url);       // the page retries its first contact for a few seconds, until the relay knows the session
    if (isObject($KZ::web)) {
       $KZ::web.setText("Kanzlei GM");
+      schedule(300, 0, "KZ_prepareWeb", $KZ::web);   // after the engine has finished creating the window
    }
    echo("[Kanzlei] window opened:" SPC $KZ::pageHost @ "/?s=" @ $KZ::s);
 }

@@ -23,10 +23,10 @@ Blob names: `cmds` (registry), `animals`, `ground`, `catalog`, `fav`, `theme`, `
 | `GET /p/blob?s&p&name[&h]` | assembled blob |
 | `POST /p/cmd {s,p,cmd,args[]}` | queue a command (`cmd` = registry id or built-in) |
 
-Built-ins handled by the Core: `kz_favsave` (arg: comma list of favourite keys), `kz_themesave`, `kz_eco` (the Core runs `!inflation export` and sends the rows as blob `economy`), `kz_dur` (args: item type, quality → asks the server for the calculated durability, answer arrives as event `dur` = `type|quality|durability|note`), `kz_players`, `kz_refresh`, `kz_close`, `kz_ping`.
+Built-ins handled by the Core: `kz_favsave` (arg: comma list of favourite keys), `kz_themesave`, `kz_eco` (arg `live` = every 15 s while the dashboard is open: the Core runs `!kzecolive`, answer = event `eco` with `H|time|cu|si|au|players|baseline;I|type|stock|stacks;...`; arg `full` = on opening / button: coin history as blob `economy` and tracked-item history as blob `ecoitems`, lines `type|date|stock|stacks`), `kz_dur` (args: item type, quality → asks the server for the calculated durability, answer arrives as event `dur` = `type|quality|durability|note`), `kz_players`, `kz_refresh`, `kz_close`, `kz_ping`.
 
 ## Server ↔ client (Torque `commandToClient`)
-`KZDur(type, quality, durability, note)` · `KZReply(status, text, last)` · `KZDataBegin/KZData/KZDataEnd(section[, line])` · `KZPlayersBegin/Row/End` · `GMLoginResult(code)` · `GMEconomyBegin/Row/End`. Strings must stay under 255 characters; `kz_sync.py` enforces 240 for registry lines.
+`KZEcoBegin/Row/End` (live) · `KZEcoItemsBegin/Row/End` (item history) · `KZDur(type, quality, durability, note)` · `KZReply(status, text, last)` · `KZDataBegin/KZData/KZDataEnd(section[, line])` · `KZPlayersBegin/Row/End` · `GMLoginResult(code)` · `GMEconomyBegin/Row/End`. Strings must stay under 255 characters; `kz_sync.py` enforces 240 for registry lines.
 
 ## Registry format (`shared/commands.kz`)
 `id TAB category TAB via TAB template TAB args TAB label_en TAB label_de TAB keywords`; `via` = `server` | `slash` | `local`; args = `name:type[(choices)][=default][?]` with types `item building object thing animal ground player int text word choice`.

@@ -10,6 +10,12 @@ function KZProbe()
    %h = new SimDownloadHelper();
    echo("[KZProbe] SimDownloadHelper:" SPC (isObject(%h) ? "yes" : "NO"));
    if (isObject(%h)) { %h.delete(); }
+   echo("[KZProbe] Canvas:" SPC Canvas.getExtent() SPC " PlayGui:" SPC (isObject(PlayGui) ? PlayGui.getClassName() : "none"));
+   if (isObject($KZ::web)) {
+      echo("[KZProbe] web window (open now): class" SPC $KZ::web.getClassName() SPC "group" SPC (isObject($KZ::web.getGroup()) ? $KZ::web.getGroup().getClassName() SPC $KZ::web.getGroup().getName() : "none") SPC "position" SPC $KZ::web.position SPC "extent" SPC $KZ::web.extent SPC "canMove" SPC $KZ::web.canMove SPC "profile" SPC $KZ::web.profile);
+   } else {
+      echo("[KZProbe] web window: not open - open it with F6 first, then run KZProbe() again to see how the engine made it");
+   }
    echo("[KZProbe] doSlashCommand:" SPC (isFunction("doSlashCommand") ? "yes" : "NO"));
    echo("[KZProbe] shellExecute:" SPC (isFunction("shellExecute") ? "yes" : "no (economy dashboard cannot open)"));
    echo("[KZProbe] PlayGui (GOD overlay parent):" SPC (isObject(PlayGui) ? "yes" : "no - the overlay falls back to the canvas content"));

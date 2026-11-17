@@ -6,7 +6,7 @@
 //   Eyes   (web)       the UI, opened with the game's own browser window (openWeb) from the relay's address
 //
 // F6 = open / close the GM window (needs a Steam ID registered on the server).  Ctrl+F6 = the old native panel (fallback while the web UI is new).
-$KZ::version = "0.4.0-test2";
+$KZ::version = "0.5.0-test3";
 $KZ::dir = "mod/KanzleiMOD";
 
 // ---- settings (override them in mod/KanzleiMOD/kanzlei_config.cs, which is never overwritten by updates) ----
@@ -14,7 +14,11 @@ $KZ::pageHost = "https://gm.wulpischelande.de";   // the web UI, opened in the g
 $KZ::gameHost = "http://gm.wulpischelande.de";    // the same server for the game's own downloads: the engine downloader has NO TLS, plain http only
 $KZ::chunk = 330;                                 // characters of data per upload request (the engine's URL length limit is unknown: see probe.cs)
 $KZ::iconBase = "";                                // "" = the game folder's art/2D as file:/// (automatic); "none" = no icons; or any address ending in /
-$KZ::pollMs = 1000;                               // how often the game asks the relay for commands while the window is open
+$KZ::pollMs = 1000;
+$KZ::webMove = 1;                                 // make the browser window movable and resizable (engine permitting)
+$KZ::webDock = 1;                                 // put it into the HUD so the game stays usable behind it (0 = leave it as the engine opens it)
+$KZ::webW = 1180;                                 // size at the start; the position is the right edge of the screen
+$KZ::webH = 720;                               // how often the game asks the relay for commands while the window is open
 $KZ::godText = "<just:center><font:Arial:15><color:ffd860>GM<font:Arial Bold:30><color:ffe890> GOD";
 if (isFile($KZ::dir @ "/kanzlei_config.cs")) {
    exec($KZ::dir @ "/kanzlei_config.cs");

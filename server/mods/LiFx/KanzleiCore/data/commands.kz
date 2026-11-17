@@ -60,6 +60,8 @@ adminland_delete	World	server	!adminland delete {name}	name:word	Delete adminlan
 inflation	Economy	server	!inflation		Show inflation now	Inflation jetzt anzeigen	
 inflation_history	Economy	server	!inflation history {n}	n:int=10	Inflation history	Inflationsverlauf	
 inflation_baseline	Economy	server	!inflation baseline {copper}	copper:int	Set the coin baseline (copper per player)	Muenz-Basiswert setzen (Kupfer pro Spieler)	
+eco_track_add	Economy	server	!ecotrack add {id}	id:item	Track an item in the economy tab	Gegenstand im Wirtschafts-Reiter beobachten	track stock
+eco_track_remove	Economy	server	!ecotrack remove {id}	id:item	Stop tracking an item	Beobachtung eines Gegenstands beenden	track stock
 dashboard	Economy	local			Economy dashboard	Wirtschafts-Dashboard	
 gmlog	System	server	!gmlog {n}	n:int=10	Show my last GM actions	Meine letzten GM-Aktionen zeigen	
 whoami	System	server	!whoami		Who am I (Steam ID / GM right)	Wer bin ich (Steam-ID / GM-Recht)	

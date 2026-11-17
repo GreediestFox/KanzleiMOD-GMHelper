@@ -38,6 +38,8 @@ BEFORE YOU START (backup, as always)
    g) Star three things, reorder them in "Favoriten", close the window, press F6 again: still there.
    h) Button "Farben": try the three colour schemes.
    h2) Tab "Wirtschaft": press "Snapshot jetzt" - KPIs, three charts, the history table and the price calculator appear (needs coins in the world for a baseline). Switch the colour scheme: the charts follow it.
+   h3) Wirtschaft: "+ Gegenstand beobachten", search an item (icons), pick it: a card appears. After a minute the first snapshot exists. Press the arrow button on a second tracked item for the split view. Open "Rechner", drag it around. Leave the tab for 20 s, come back: the old values show at once, then refresh. The status line shows "Auto 15 s".
+   h4) The window itself: can you drag the "Kanzlei GM" window by its title bar, resize it, and still walk / click in the game next to it? Run KZProbe() while it is open and send the "[KZProbe] web window" line.
    i) Place a building or object, spawn an animal, change the weather.
    j) A non-GM account must not get anything. Ctrl+F6 still opens the old panel.
 
