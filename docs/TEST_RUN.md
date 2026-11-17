@@ -37,6 +37,7 @@ BEFORE YOU START (backup, as always)
    f) GOD on: gold "GM GOD" on the game screen and in the page header. GOD off: gone.
    g) Star three things, reorder them in "Favoriten", close the window, press F6 again: still there.
    h) Button "Farben": try the three colour schemes.
+   h2) Tab "Wirtschaft": press "Snapshot jetzt" - KPIs, three charts, the history table and the price calculator appear (needs coins in the world for a baseline). Switch the colour scheme: the charts follow it.
    i) Place a building or object, spawn an animal, change the weather.
    j) A non-GM account must not get anything. Ctrl+F6 still opens the old panel.
 
