@@ -464,6 +464,10 @@ function KZ_exec(%line)
       }
       return;
    }
+   if (%id $= "kz_eco") {
+      gm("inflation export");
+      return;
+   }
    if (%id $= "kz_players") {
       gm("kzplayers");
       return;
@@ -581,7 +585,7 @@ function KZ_local_logout()
 
 function KZ_local_dashboard()
 {
-   gm("inflation export");
+   gm("inflation export");   // with a live web UI the rows go to its tab "Wirtschaft", otherwise the old dashboard page opens
 }
 
 // Economy dashboard: the server sends the snapshot rows (GMEconomyBegin / Row / End); they are written next to the dashboard page and it is opened.
@@ -598,6 +602,16 @@ function clientCmdGMEconomyRow(%row)
 
 function clientCmdGMEconomyEnd(%n)
 {
+   if ($KZ::live) {
+      // the web UI shows the economy itself (tab "Wirtschaft"): send the rows as a data blob
+      %rows = "";
+      for (%j = 0; %j < $KZ::econRows; %j++) {
+         %rows = %rows @ $KZ::econRow[%j] @ "\n";
+      }
+      KZ_uploadBlob("economy", %rows, "");
+      KZ_push("reply", "ok", "Economy data sent (" @ %n @ " snapshots)");
+      return;
+   }
    %text = "window.LIFX_ECONOMY_ROWS = [\n";
    for (%i = 0; %i < $KZ::econRows; %i++) {
       %text = %text @ "\"" @ $KZ::econRow[%i] @ "\",\n";

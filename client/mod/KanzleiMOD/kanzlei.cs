@@ -6,7 +6,7 @@
 //   Eyes   (web)       the UI, opened with the game's own browser window (openWeb) from the relay's address
 //
 // F6 = open / close the GM window (needs a Steam ID registered on the server).  Ctrl+F6 = the old native panel (fallback while the web UI is new).
-$KZ::version = "0.3.0-test1";
+$KZ::version = "0.4.0-test2";
 $KZ::dir = "mod/KanzleiMOD";
 
 // ---- settings (override them in mod/KanzleiMOD/kanzlei_config.cs, which is never overwritten by updates) ----

@@ -9,7 +9,7 @@ const MAX_ARG = 120;
 const MAX_ARG_BIG = 1800;            // kz_favsave carries the whole favourites list
 const MAX_DATA = 1900;               // one pushed chunk
 const BIG_ARG_CMDS = new Set(["kz_favsave"]);
-const BUILTIN_CMDS = new Set(["kz_favsave", "kz_themesave", "kz_dur", "kz_refresh", "kz_players", "kz_close", "kz_ping"]);
+const BUILTIN_CMDS = new Set(["kz_favsave", "kz_themesave", "kz_dur", "kz_eco", "kz_refresh", "kz_players", "kz_close", "kz_ping"]);
 const EVENT_TYPES = new Set(["reply", "players", "status", "fav", "god", "blob", "info", "dur"]);
 
 const now = () => Math.floor(Date.now() / 1000);

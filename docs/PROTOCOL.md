@@ -13,7 +13,7 @@ All ids are `[a-z0-9]{12,24}`. Game answers are plain text ending with a line `#
 | `/g/ready?s&k&name&h` | announce an already cached catalog to the page |
 | `/api/echo?d=` | probe helper: returns the length received |
 
-Blob names: `cmds` (registry), `animals`, `ground`, `catalog`, `fav`. Chunks are cut at line ends and may arrive in any order.
+Blob names: `cmds` (registry), `animals`, `ground`, `catalog`, `fav`, `theme`, `economy` (lines `date,copper,silver,gold,coinValue,players,perPlayer,inflationPct,baseline`, sent after `kz_eco`). Chunks are cut at line ends and may arrive in any order.
 
 ## Page side – https
 | Request | Meaning |
@@ -23,7 +23,7 @@ Blob names: `cmds` (registry), `animals`, `ground`, `catalog`, `fav`. Chunks are
 | `GET /p/blob?s&p&name[&h]` | assembled blob |
 | `POST /p/cmd {s,p,cmd,args[]}` | queue a command (`cmd` = registry id or built-in) |
 
-Built-ins handled by the Core: `kz_favsave` (arg: comma list of favourite keys), `kz_themesave`, `kz_dur` (args: item type, quality → asks the server for the calculated durability, answer arrives as event `dur` = `type|quality|durability|note`), `kz_players`, `kz_refresh`, `kz_close`, `kz_ping`.
+Built-ins handled by the Core: `kz_favsave` (arg: comma list of favourite keys), `kz_themesave`, `kz_eco` (the Core runs `!inflation export` and sends the rows as blob `economy`), `kz_dur` (args: item type, quality → asks the server for the calculated durability, answer arrives as event `dur` = `type|quality|durability|note`), `kz_players`, `kz_refresh`, `kz_close`, `kz_ping`.
 
 ## Server ↔ client (Torque `commandToClient`)
 `KZDur(type, quality, durability, note)` · `KZReply(status, text, last)` · `KZDataBegin/KZData/KZDataEnd(section[, line])` · `KZPlayersBegin/Row/End` · `GMLoginResult(code)` · `GMEconomyBegin/Row/End`. Strings must stay under 255 characters; `kz_sync.py` enforces 240 for registry lines.
