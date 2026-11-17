@@ -57,6 +57,8 @@ package LiFxGMCommands
             LiFxGMCommands::dbChanges();   // VPS layout: no LiFx framework, create the tables right away
         }
         LiFxGMCommands::loadData();
+        cancel($KZS::ecoTickEv);
+        $KZS::ecoTickEv = schedule(60000, 0, "LiFxGMCommands_ecoTick");   // first economy snapshot one minute after the start (the tables exist by then)
         echo("[GM] panel access by Steam ID, registered:" SPC getWordCount($LiFxGM::steamIds));
     }
 
@@ -108,6 +110,9 @@ package LiFxGMCommands
         // Inflation helper: one snapshot per day, plus a small settings table (the coin baseline).
         dbi.Update("CREATE TABLE IF NOT EXISTS `lifx_gm_settings` (`Name` VARCHAR(40) NOT NULL, `Value` DOUBLE NOT NULL DEFAULT 0, PRIMARY KEY (`Name`)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3");
         dbi.Update("CREATE TABLE IF NOT EXISTS `lifx_inflation_log` (`SnapshotDate` DATE NOT NULL, `Copper` BIGINT NOT NULL DEFAULT 0, `Silver` BIGINT NOT NULL DEFAULT 0, `Gold` BIGINT NOT NULL DEFAULT 0, `CoinValue` BIGINT NOT NULL DEFAULT 0, `Players` INT NOT NULL DEFAULT 1, `PerPlayer` DOUBLE NOT NULL DEFAULT 0, `Baseline` DOUBLE NOT NULL DEFAULT 0, `InflationPct` DOUBLE NOT NULL DEFAULT 0, PRIMARY KEY (`SnapshotDate`)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3");
+        // Item tracking of the economy tab: the item types the GMs watch, and one row per type and day (world stock).
+        dbi.Update("CREATE TABLE IF NOT EXISTS `lifx_gm_tracked` (`ObjectTypeID` INT NOT NULL, `AddedAt` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (`ObjectTypeID`)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3");
+        dbi.Update("CREATE TABLE IF NOT EXISTS `lifx_item_log` (`SnapshotDate` DATE NOT NULL, `ObjectTypeID` INT NOT NULL, `Quantity` BIGINT NOT NULL DEFAULT 0, `Stacks` INT NOT NULL DEFAULT 0, PRIMARY KEY (`SnapshotDate`, `ObjectTypeID`)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3");
         dbi.Update("CREATE TABLE IF NOT EXISTS `lifx_gm_log` (`ID` INT UNSIGNED NOT NULL AUTO_INCREMENT, `LoggedAt` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, `AccountID` INT UNSIGNED NOT NULL DEFAULT 0, `CharID` INT UNSIGNED NOT NULL DEFAULT 0, `Action` VARCHAR(255) NOT NULL DEFAULT '', PRIMARY KEY (`ID`)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3");
     }
 
@@ -149,7 +154,7 @@ package LiFxGMCommands
     }
 
     function LiFxGMCommands::version() {
-        return "0.14.0-kanzlei (KanzleiMOD 0.4.0-test2)";
+        return "0.14.0-kanzlei (KanzleiMOD 0.5.0-test3)";
     }
 
     function LiFxGMCommands::reply(%client, %text) {
@@ -229,7 +234,7 @@ package LiFxGMCommands
             }
         }
         // internal commands of the framework (not in the registry)
-        %internal = "kzcat kzplayers kzreload kzping kzdur";
+        %internal = "kzcat kzplayers kzreload kzping kzdur kzecolive kzecoitems";
         for (%i = 0; %i < getWordCount(%internal); %i++) {
             $KZS::knownName[$KZS::knownN] = getWord(%internal, %i);
             $KZS::known[getWord(%internal, %i)] = 1;
@@ -942,6 +947,108 @@ package LiFxGMCommands
         dbi.select(%req, "onInflation", "SELECT t.cu AS Copper, t.si AS Silver, t.au AS Gold, (t.cu + t.si*100 + t.au*10000) AS CoinValue, t.pl AS Players, ROUND((t.cu + t.si*100 + t.au*10000)/t.pl, 2) AS PerPlayer, b.v AS Baseline FROM (" @ %inner @ ") t JOIN (SELECT COALESCE(MAX(`Value`),0) AS v FROM `lifx_gm_settings` WHERE `Name`='coinBaseline') b ON 1=1");
     }
 
+    // ---- Economy tab: live values + tracked items ---------------------------------------------------------------------------------
+    // !kzecolive : current coin totals + world stock of every tracked item type, answered at once from a 10 s cache (several open dashboards cost one query).
+    //              Today's row of both history tables is refreshed at most every 2 minutes.
+    // !kzecoitems: history of the tracked items (last 30 days).      !ecotrack add|remove <item type id>   (max 12 types)
+    $KZS::ecoMax = 12;
+    $KZS::ecoCacheMs = 10000;
+    $KZS::ecoLogMs = 120000;
+    $KZS::ecoHistDays = 30;
+
+    function LiFxGMCommands::ecoLive(%caller) {
+        if ($KZS::ecoRows !$= "" && getSimTime() - $KZS::ecoAt < $KZS::ecoCacheMs) {
+            LiFxGMCommands::ecoSendLive(%caller, $KZS::ecoRows);
+            return;
+        }
+        %req = new ScriptObject() {
+            class = "LiFxGMReq";
+            caller = %caller;
+        };
+        %inner = LiFxGMCommands::inflationInner();
+        dbi.select(%req, "onEcoCoins", "SELECT t.cu AS cu, t.si AS si, t.au AS au, t.pl AS pl, b.v AS base FROM (" @ %inner @ ") t JOIN (SELECT COALESCE(MAX(`Value`),0) AS v FROM `lifx_gm_settings` WHERE `Name`='coinBaseline') b ON 1=1");
+    }
+
+    function LiFxGMReq::onEcoCoins(%this, %rs) {
+        %head = "";
+        if (%rs.Ok() && %rs.nextRecord()) {
+            %head = "H|" @ mFloor(getRealTime() / 1000) @ "|" @ %rs.getFieldValue("cu") @ "|" @ %rs.getFieldValue("si") @ "|" @ %rs.getFieldValue("au") @ "|" @ %rs.getFieldValue("pl") @ "|" @ %rs.getFieldValue("base");
+        }
+        dbi.remove(%rs);
+        %this.head = %head;
+        dbi.select(%this, "onEcoItems", "SELECT t.ObjectTypeID AS id, COALESCE(SUM(i.Quantity),0) AS q, COUNT(i.ID) AS s FROM `lifx_gm_tracked` t LEFT JOIN `items` i ON i.ObjectTypeID=t.ObjectTypeID GROUP BY t.ObjectTypeID ORDER BY MIN(t.AddedAt)");
+    }
+
+    function LiFxGMReq::onEcoItems(%this, %rs) {
+        %rows = %this.head;
+        if (%rs.Ok()) {
+            while (%rs.nextRecord()) {
+                %rows = %rows @ "\n" @ "I|" @ %rs.getFieldValue("id") @ "|" @ %rs.getFieldValue("q") @ "|" @ %rs.getFieldValue("s");
+            }
+        }
+        dbi.remove(%rs);
+        if (%this.head $= "") {
+            LiFxGMCommands::reply(%this.caller, "Could not read the coin totals.");
+        } else {
+            $KZS::ecoRows = %rows;
+            $KZS::ecoAt = getSimTime();
+            LiFxGMCommands::ecoSendLive(%this.caller, %rows);
+            if (getSimTime() - $KZS::ecoLoggedAt > $KZS::ecoLogMs || $KZS::ecoLoggedAt $= "") {
+                $KZS::ecoLoggedAt = getSimTime();
+                LiFxGMCommands::inflationSnapshot();
+                LiFxGMCommands::ecoItemSnapshot();
+            }
+        }
+        %this.delete();
+    }
+
+    function LiFxGMCommands::ecoSendLive(%caller, %rows) {
+        if (!isObject(%caller)) {
+            return;
+        }
+        commandToClient(%caller, 'KZEcoBegin');
+        for (%i = 0; %i < getRecordCount(%rows); %i++) {
+            commandToClient(%caller, 'KZEcoRow', getRecord(%rows, %i));
+        }
+        commandToClient(%caller, 'KZEcoEnd');
+    }
+
+    // one row per tracked type and day (upsert)
+    function LiFxGMCommands::ecoItemSnapshot() {
+        dbi.Update("INSERT INTO `lifx_item_log` (`SnapshotDate`, `ObjectTypeID`, `Quantity`, `Stacks`) SELECT CURDATE(), t.ObjectTypeID, COALESCE(SUM(i.Quantity),0), COUNT(i.ID) FROM `lifx_gm_tracked` t LEFT JOIN `items` i ON i.ObjectTypeID=t.ObjectTypeID GROUP BY t.ObjectTypeID ON DUPLICATE KEY UPDATE `Quantity`=VALUES(`Quantity`), `Stacks`=VALUES(`Stacks`)");
+    }
+
+    function LiFxGMCommands::ecoItemsHistory(%caller) {
+        %req = new ScriptObject() {
+            class = "LiFxGMReq";
+            caller = %caller;
+        };
+        dbi.select(%req, "onEcoHistory", "SELECT t.ObjectTypeID AS id, l.SnapshotDate AS d, l.Quantity AS q, l.Stacks AS s FROM `lifx_gm_tracked` t LEFT JOIN `lifx_item_log` l ON l.ObjectTypeID=t.ObjectTypeID AND l.SnapshotDate >= DATE_SUB(CURDATE(), INTERVAL " @ $KZS::ecoHistDays @ " DAY) ORDER BY t.AddedAt, t.ObjectTypeID, l.SnapshotDate");
+    }
+
+    function LiFxGMReq::onEcoHistory(%this, %rs) {
+        %c = %this.caller;
+        if (isObject(%c)) {
+            commandToClient(%c, 'KZEcoItemsBegin');
+            if (%rs.Ok()) {
+                while (%rs.nextRecord()) {
+                    commandToClient(%c, 'KZEcoItemsRow', %rs.getFieldValue("id") @ "|" @ %rs.getFieldValue("d") @ "|" @ %rs.getFieldValue("q") @ "|" @ %rs.getFieldValue("s"));
+                }
+            }
+            commandToClient(%c, 'KZEcoItemsEnd');
+        }
+        dbi.remove(%rs);
+        %rs.delete();
+        %this.delete();
+    }
+
+    // A daily snapshot even when nobody looks at the dashboard (every 3 hours, both tables upsert today's row).
+    function LiFxGMCommands_ecoTick() {
+        LiFxGMCommands::inflationSnapshot();
+        LiFxGMCommands::ecoItemSnapshot();
+        $KZS::ecoTickEv = schedule(10800000, 0, "LiFxGMCommands_ecoTick");
+    }
+
     function LiFxGMReq::onInflation(%this, %rs) {
         if (%rs.Ok() && %rs.nextRecord()) {
             %cu = %rs.getFieldValue("Copper");
@@ -1089,6 +1196,34 @@ package LiFxGMCommands
                 return 1;
             }
             LiFxGMCommands::calcDurability(%client, %client, %t, 1, LiFxGMCommands::clampQuality(getWord(%message, 2)), "preview");
+            return 1;
+        }
+
+        if (%cmd $= "kzecolive") {
+            LiFxGMCommands::ecoLive(%client);
+            return 1;
+        }
+
+        if (%cmd $= "kzecoitems") {
+            LiFxGMCommands::ecoItemsHistory(%client);
+            return 1;
+        }
+
+        if (%cmd $= "ecotrack") {
+            %sub = strlwr(getWord(%message, 1));
+            %id = getWord(%message, 2);
+            if ((%sub !$= "add" && %sub !$= "remove") || %id $= "" || stripChars(%id, "0123456789") !$= "") {
+                LiFxGMCommands::reply(%client, "Usage: !ecotrack add|remove <item type id>");
+                return 1;
+            }
+            if (%sub $= "add") {
+                dbi.Update("INSERT IGNORE INTO `lifx_gm_tracked` (`ObjectTypeID`) SELECT " @ %id @ " FROM DUAL WHERE (SELECT COUNT(*) FROM `lifx_gm_tracked`) < " @ $KZS::ecoMax @ " AND EXISTS (SELECT 1 FROM `objects_types` WHERE ID=" @ %id @ ")");
+                LiFxGMCommands::reply(%client, "Tracking item type" SPC %id SPC "(max" SPC $KZS::ecoMax SPC "types; an unknown type id or a full list is ignored).");
+            } else {
+                dbi.Update("DELETE FROM `lifx_gm_tracked` WHERE `ObjectTypeID`=" @ %id);
+                LiFxGMCommands::reply(%client, "Stopped tracking item type" SPC %id @ ".");
+            }
+            $KZS::ecoRows = "";
             return 1;
         }
 

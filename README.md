@@ -23,7 +23,7 @@ Status of what is tested and what is not: **[docs/STATUS.md](docs/STATUS.md)**. 
 ## Features of the new UI
 - Tabs **Favoriten** and **Alle**. In *Alle* every entry has a grey star; click it to pin the entry. In *Favoriten* the tiles can be dragged into any order (or moved with ◀ ▶). Favourites are stored in a file on the GM's client.
 - **Search engine** across commands, items, buildings, objects, animals and ground materials: all words must match, accents ignored, prefix and word-start ranking, small typos tolerated, icons, type filters, **results window with page buttons** whose page size follows the window size.
-- **Wirtschaft tab**: the economy dashboard inside the UI (inflation, value per player, coin supply, trend, history, price calculator).
+- **Wirtschaft tab**: the economy dashboard inside the UI (inflation, value per player, coin supply, trend, history, price calculator) plus **item tracking** (pick items with the search engine, icons, world stock over time), **auto refresh every 15 s while open**, a **split compare view** of two items and a **floating calculator**.
 - Item dialog (quantity / quality / durability, to me or to a player), forms generated from the command registry, player picker from the online list.
 - Every answer from the server shows as a green **Erledigt / Done** or red **Fehler / Failed**; log at the bottom.
 - **GOD**: while invulnerable is on, a gold "GM GOD" is shown on the game screen and in the page header.

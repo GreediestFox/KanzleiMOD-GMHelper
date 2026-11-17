@@ -22,7 +22,9 @@ for (const m of mats) for (const [t, c] of types) cat += `i|${id++}|${c}|${m}${m
 await blob("cmds", shared("commands.kz")); await blob("animals", shared("animals.kz")); await blob("ground", shared("ground.kz"));
 const h = "mock" + id; await blob("catalog", cat, h);
 const ecoRows = () => { const out = []; let pp = 4600; for (let i = 44; i >= 0; i--) { pp += Math.sin(i / 5) * 90 + 40; const pl = 18 + Math.round(5 * Math.sin(i / 9)) + Math.round((45 - i) / 9), val = Math.round(pp * pl), cu = Math.round(val * 0.38), si = Math.round(val * 0.34 / 100), au = Math.round(val * 0.28 / 10000), tot = cu + si * 100 + au * 10000; out.push([new Date(Date.now() - i * 864e5).toISOString().slice(0, 10), cu, si, au, tot, pl, (tot / pl).toFixed(2), ((tot / pl / 5000 - 1) * 100).toFixed(1), 5000].join(",")); } return out.join("\n") + "\n"; };
-await blob("economy", ecoRows());
+const tracked = new Set(["241", "242", "250"]);
+const itemRows = () => { const out = []; for (const id of tracked) { for (let i = 29; i >= 0; i--) out.push([id, new Date(Date.now() - i * 864e5).toISOString().slice(0, 10), Math.round(900 + Math.sin(i / 4 + Number(id)) * 80 + (30 - i) * 4), 20 + Number(id) % 9].join("|")); } return out.join("\n") + "\n"; };
+await blob("economy", ecoRows()); await blob("ecoitems", itemRows());
 await blob("fav", "c:godon,c:heal,i:241,b:101,a:WolfData\n");
 await g("/g/push", { t: "players", d: "101|Alrik Steinhand;102|Berta Müllerin;103|Cedric Vale" });
 console.log(`\nOpen:  ${BASE}/?s=${s}&p=${p}&lang=de\n(mock game running, Ctrl+C to stop)\n`);
@@ -35,7 +37,13 @@ for (;;) {
     console.log("command:", cmd, args.join(" | ").slice(0, 120));
     if (cmd === "godon" || cmd === "godoff") { god = cmd === "godon"; await g("/g/push", { t: "god", id: god ? "on" : "off" }); }
     if (cmd === "kz_players") await g("/g/push", { t: "players", d: "101|Alrik Steinhand;102|Berta Müllerin;103|Cedric Vale;104|Neu Dazu" });
-    if (cmd === "kz_eco") { await blob("economy", ecoRows()); continue; }
+    if (cmd === "kz_eco") {
+      if (args[0] === "live") { const last = ecoRows().trim().split("\n").pop().split(","); await g("/g/push", { t: "eco", d: ["H|0|" + Math.round(last[1] * (1 + (Math.random() - 0.45) * 0.004)), last[2], last[3], last[5], last[8]].join("|") + ";" + [...tracked].map((id) => "I|" + id + "|" + Math.round(900 + Math.random() * 40 + Number(id) % 50) + "|" + (20 + Number(id) % 9)).join(";") }); }
+      else { await blob("economy", ecoRows()); await blob("ecoitems", itemRows()); }
+      continue;
+    }
+    if (cmd === "eco_track_add") { tracked.add(args[0]); }
+    if (cmd === "eco_track_remove") { tracked.delete(args[0]); }
     if (cmd.startsWith("kz_")) continue;
     const bad = cmd === "kick" || cmd === "ban";
     await g("/g/push", { t: "reply", id: bad ? "err" : "ok", d: bad ? "Spieler ist nicht online." : `${cmd}: erledigt (${args.join(" ")})` });
