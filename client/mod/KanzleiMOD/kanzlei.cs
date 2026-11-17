@@ -6,7 +6,7 @@
 //   Eyes   (web)       the UI, opened with the game's own browser window (openWeb) from the relay's address
 //
 // F6 = open / close the GM window (needs a Steam ID registered on the server).  Ctrl+F6 = the old native panel (fallback while the web UI is new).
-$KZ::version = "0.6.0-test4";
+$KZ::version = "0.6.0-test5";
 $KZ::dir = "mod/KanzleiMOD";
 
 // ---- settings (override them in mod/KanzleiMOD/kanzlei_config.cs, which is never overwritten by updates) ----
@@ -17,8 +17,8 @@ $KZ::iconBase = "";                                // "" = the game folder's art
 $KZ::pollMs = 1000;
 $KZ::webMove = 1;                                 // make the browser window movable and resizable (engine permitting)
 $KZ::webDock = 1;                                 // put it into the HUD so the game stays usable behind it (0 = leave it as the engine opens it)
-$KZ::webW = 1180;                                 // size at the start; the position is the right edge of the screen
-$KZ::webH = 720;                               // how often the game asks the relay for commands while the window is open
+$KZ::webW = 2360;                                 // size at the start (twice the old 1180 x 720); it is cut down to the screen, the position is the right edge
+$KZ::webH = 1440;
 $KZ::godText = "<just:center><font:Arial:15><color:ffd860>GM<font:Arial Bold:30><color:ffe890> GOD";
 if (isFile($KZ::dir @ "/kanzlei_config.cs")) {
    exec($KZ::dir @ "/kanzlei_config.cs");

@@ -28,6 +28,11 @@ if (!isObject(LiFxGMCommands))
 // GM rights belong to STEAM IDs (2026-11-01): the Steam IDs registered in <server mod folder>/steamids.cs ($LiFxGM::steamIds)
 // may open the GM panel and use the GM commands, nobody else. There is no password any more. "!whoami" shows your Steam ID.
 $KZS::dir = isFile("mods/LiFx/KanzleiCore/mod.cs") ? "mods/LiFx/KanzleiCore" : "scripts/lifmod/gm";
+// Economy tab settings. They must sit OUTSIDE the package block (a statement inside "package {}" is a parse error and the whole mod does not load).
+$KZS::ecoMax = 12;
+$KZS::ecoCacheMs = 10000;
+$KZS::ecoLogMs = 120000;
+$KZS::ecoHistDays = 30;
 exec($KZS::dir @ "/steamids.cs");
 
 // Quality given to the ground layer that !ground / !raise puts down (the engine default is 100).
@@ -951,10 +956,6 @@ package LiFxGMCommands
     // !kzecolive : current coin totals + world stock of every tracked item type, answered at once from a 10 s cache (several open dashboards cost one query).
     //              Today's row of both history tables is refreshed at most every 2 minutes.
     // !kzecoitems: history of the tracked items (last 30 days).      !ecotrack add|remove <item type id>   (max 12 types)
-    $KZS::ecoMax = 12;
-    $KZS::ecoCacheMs = 10000;
-    $KZS::ecoLogMs = 120000;
-    $KZS::ecoHistDays = 30;
 
     function LiFxGMCommands::ecoLive(%caller) {
         if ($KZS::ecoRows !$= "" && getSimTime() - $KZS::ecoAt < $KZS::ecoCacheMs) {

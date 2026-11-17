@@ -857,9 +857,10 @@ function KZ_prepareWeb(%ctrl)
    %w = $KZ::webW;
    %h = $KZ::webH;
    if (%w > %cw - 20) { %w = %cw - 20; }
-   if (%h > %ch - 20) { %h = %ch - 20; }
+   if (%h > %ch - 70) { %h = %ch - 70; }
    %x = (%cw - %w - 16);
-   %y = 40;
+   if (%x < 4) { %x = 4; }
+   %y = 36;
    if ($KZ::webMove) {
       %ctrl.canMove = 1;
       %ctrl.resizeWidth = 1;

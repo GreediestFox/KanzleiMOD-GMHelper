@@ -182,8 +182,13 @@
       if (!S.favLoaded) { S.favLoaded = true; S.favs = d ? d.split(',') : []; try { localStorage.setItem('kz_favs', S.favs.join(',')); } catch (e) { } refreshView(); }
     }
     else if (ev.type === 'eco') ecoLiveEvent(d);
-    else if (ev.type === 'blob') loadBlob(ev.id, d);
+    else if (ev.type === 'blob') { if (ev.id === 'catalog') { S.catHash = d; S.catTries = 0; } loadBlob(ev.id, d); }
   }
+  // insurance: if the item list announced itself but is still empty a few seconds later (a failed or lost download), ask for it again
+  setInterval(function () {
+    if (DEMO || S.dead || !S.catHash || S.catalogN || S.catTries >= 6) return;
+    S.catTries++; logMsg('sent', 'item list: asking again (' + S.catTries + ')'); loadBlob('catalog', S.catHash);
+  }, 6000);
   function loadBlob(name, hash) {
     transport.blob(name, hash, function (txt) {
       if (name === 'theme') { if (!S.themeLoaded) { S.themeLoaded = true; var tt = txt.replace(/\s+$/, ''); if (tt) { window.KZTheme.load(tt); try { localStorage.setItem('kz_theme', window.KZTheme.serialize()); } catch (e) { } } } return; }
@@ -225,7 +230,10 @@
       });
     };
     transport.blob = function (name, hash, cb) {
-      xhr('GET', '/p/blob?s=' + S.s + '&p=' + S.p + '&name=' + name + (hash ? '&h=' + encodeURIComponent(hash) : ''), null, function (err, j) { if (!err && j) cb(j.data); });
+      xhr('GET', '/p/blob?s=' + S.s + '&p=' + S.p + '&name=' + name + (hash ? '&h=' + encodeURIComponent(hash) : ''), null, function (err, j) {
+        if (err || !j) { logMsg('err', 'blob ' + name + ' failed (' + err + ')'); return; }
+        try { cb(j.data); } catch (e) { logMsg('err', 'blob ' + name + ': ' + (e && e.message ? e.message : e)); }
+      });
     };
   }
 
@@ -464,7 +472,7 @@
     resultsGrid = PagedGrid(host, function () { return shown; }, { noStar: !!(popts && popts.onPick), onOpen: function (e) { if (popts && popts.onPick) { var cb = popts.onPick; modalRef.close(); cb(e); } else openEntity(e); }, onFav: function () { } });
     var tmr = 0; inp.oninput = inp.onkeyup = function (ev) { if (ev && ev.keyCode === 37 && !inp.value) return; clearTimeout(tmr); tmr = setTimeout(function () { resultsGrid.page = 0; run(); }, 140); };
     inp.onkeydown = function (ev) { if (ev.keyCode === 33) { resultsGrid.next(-1); ev.preventDefault(); } else if (ev.keyCode === 34) { resultsGrid.next(1); ev.preventDefault(); } };
-    run(); setTimeout(function () { resultsGrid.render(); inp.focus(); inp.setSelectionRange && inp.setSelectionRange(inp.value.length, inp.value.length); }, 0);
+    run(); setTimeout(function () { if (!resultsGrid) return; resultsGrid.render(); inp.focus(); inp.setSelectionRange && inp.setSelectionRange(inp.value.length, inp.value.length); }, 0);
   }
 
   /* ---------------------------------------------------------------- actions: forms + entity dialogs */
@@ -542,11 +550,17 @@
   function run(cmdId, args) {
     if (cmdId === 'dashboard') { setTab('eco'); return; }
     var c = S.cmdById[cmdId];
-    if (DANGER[cmdId] && !window.confirm((c ? (S.lang === 'de' ? c.de : c.en) : cmdId) + '\n\n' + t('confirm'))) return;
+    if (DANGER[cmdId]) { askConfirm((c ? (S.lang === 'de' ? c.de : c.en) : cmdId) + '\n\n' + t('confirm'), t('run'), function () { transport.send(cmdId, args); }); return; }
     transport.send(cmdId, args);
   }
   function foot(buttons) { var f = el('div', { 'class': 'm-foot' }); for (var i = 0; i < buttons.length; i++) f.appendChild(buttons[i]); return f; }
   function btn(text, pri, fn) { return el('button', { type: 'button', 'class': 'btn' + (pri ? ' pri' : ''), text: text, onclick: fn }); }
+  // The game's browser window must never open a native dialog (window.confirm / alert): it crashes the game. This asks inside the page instead.
+  function askConfirm(msg, okLabel, onYes) {
+    var ref = null;
+    var body = el('div', { 'class': 'm-body' }, [el('div', { text: msg, style: 'white-space:pre-line;padding:8px 2px 6px;font-size:15px;line-height:1.5' })]);
+    ref = modal('confirm', t('confirm'), body, foot([btn(t('cancel'), false, function () { ref.close(); }), btn(okLabel || t('run'), true, function () { ref.close(); onYes(); })]));
+  }
   function entHead(e) { return el('div', { 'class': 'ent-head' }, [iconNode(e, 'ico'), el('div', null, [el('div', { 'class': 't', text: e.name }), el('div', { 'class': 's', text: (e.sub || '') + (e.kind === 'c' ? ' · ' + e.id : ' · #' + e.id) })])]); }
 
   function openEntity(e) {
@@ -875,10 +889,12 @@
     ecoSave(); return id;
   }
   function ecoUntrack(id) {
-    var e = entOf(id); if (!window.confirm(e.name + '\n\n' + E('untrack') + '?')) return;
-    var i = indexOf(ECO.tracked, id); if (i >= 0) ECO.tracked.splice(i, 1); delete ECO.hist[id];
-    if (ECO.sel === id) ECO.sel = 'total'; if (ECO.cmp === id) ECO.cmp = '';
-    transport.send('eco_track_remove', [id]); ecoSave(); renderEco();
+    var e = entOf(id);
+    askConfirm(e.name + '\n\n' + E('untrack') + '?', E('untrack'), function () {
+      var i = indexOf(ECO.tracked, id); if (i >= 0) ECO.tracked.splice(i, 1); delete ECO.hist[id];
+      if (ECO.sel === id) ECO.sel = 'total'; if (ECO.cmp === id) ECO.cmp = '';
+      transport.send('eco_track_remove', [id]); ecoSave(); renderEco();
+    });
   }
   // the item search window (icons, filters, paging) in "pick" mode: a click returns the item instead of opening its dialog
   function ecoPickItem(title, cb) { openResults('', { pick: true, kinds: ['i'], title: title, onPick: cb }); }
@@ -1068,6 +1084,8 @@
   }
 
   /* ---------------------------------------------------------------- boot */
+  // script errors become visible in the log bar (the game's window has no console)
+  window.onerror = function (msg, url, line, col) { try { logMsg('err', 'JS: ' + msg + ' (' + (line || '?') + ':' + (col || '?') + ')'); } catch (e) { } return false; };
   function boot() {
     if (!DEMO && (!S.s || !S.p)) { document.body.innerHTML = '<div style="padding:40px;font:16px sans-serif;color:#e3d9bd">Kanzlei GM &ndash; open this page from the game (F6). / Diese Seite im Spiel mit F6 öffnen.<br><br><a style="color:#c8a84b" href="?demo=1">Demo</a></div>'; return; }
     if (!S.favLoaded && !DEMO) { try { var f = localStorage.getItem('kz_favs'); if (f) S.favs = f.split(','); } catch (e) { } }
