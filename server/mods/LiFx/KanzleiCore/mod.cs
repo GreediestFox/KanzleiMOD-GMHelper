@@ -154,7 +154,7 @@ package LiFxGMCommands
     }
 
     function LiFxGMCommands::version() {
-        return "0.14.0-kanzlei (KanzleiMOD 0.5.0-test3)";
+        return "0.14.0-kanzlei (KanzleiMOD 0.6.0-test4)";
     }
 
     function LiFxGMCommands::reply(%client, %text) {
@@ -1137,6 +1137,7 @@ package LiFxGMCommands
                 echo("[GM] account" SPC %account SPC "steam id" SPC %client.steamId SPC "opened the GM panel, GM mode activated");
                 LiFxGMCommands::reply(%client, "GM panel unlocked (Steam ID registered). GM mode is on.");
                 commandToClient(%client, 'GMLoginResult', 1);
+                commandToClient(%client, 'KZHello', LiFxGMCommands::version());   // tells the client that !kz commands are understood
             } else {
                 if (%client.gmSteam $= "") {
                     LiFxGMCommands::lookupSteam(%client);

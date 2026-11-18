@@ -383,7 +383,7 @@ function KZB_build()
    }
    $KZB::catalog = %catSeen @ %lines;
    $KZB::count = %count;
-   $KZB::hash = "k" @ %count @ "x" @ %sum @ "x" @ $KZB::lang;
+   $KZB::hash = "k2" @ %count @ "x" @ %sum @ "x" @ $KZB::lang;
    $KZB::langBuilt = $KZB::lang;
    $KZB::state = 2;
    $KZB::status = "ready";

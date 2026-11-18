@@ -10,7 +10,7 @@
   },
   "d1_databases": [
     // fill in after:  npx wrangler d1 create kanzlei-gm
-    { "binding": "DB", "database_name": "kanzlei-gm", "database_id": "00000000-0000-0000-0000-000000000000", "migrations_dir": "migrations" }
+    { "binding": "DB", "database_name": "kanzlei-gm", "database_id": "cf8d420a-7501-4216-8bbc-6d65b77b8f01", "migrations_dir": "migrations" }
   ],
   "workers_dev": false,
   // subdomain of your website; created by the custom_domain entry on deploy

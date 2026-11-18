@@ -58,10 +58,44 @@ function KZ_hex2(%n)
 }
 
 // percent-encodes every byte except letters, digits and - _ . ~ |   (bytes >= 128 as they are, i.e. UTF-8 stays intact)
-function KZ_enc(%s)
+// Umlauts and other non-ASCII characters: this engine hands them over as ONE character, which the byte table above cannot find (it produced "?").
+// data/chars.kz lists such characters with their UTF-8 bytes; they are read with the same FileObject path as the game's names, so they match.
+function KZ_loadChars()
+{
+   $KZ::uN = 0;
+   %file = $KZ::dir @ "/data/chars.kz";
+   %fo = new FileObject();
+   if (isFile(%file) && %fo.openForRead(%file)) {
+      while (!%fo.isEOF()) {
+         %l = %fo.readLine();
+         if (%l $= "" || getSubStr(%l, 0, 1) $= "#") {
+            continue;
+         }
+         %ch = getField(%l, 0);
+         %hx = trim(getField(%l, 1));
+         if (%ch $= "" || strlen(%hx) < 2) {
+            continue;
+         }
+         %p = "";
+         for (%j = 0; %j < strlen(%hx); %j += 2) {
+            %p = %p @ "%" @ getSubStr(%hx, %j, 2);
+         }
+         $KZ::uC[$KZ::uN] = %ch;
+         $KZ::uP[$KZ::uN] = %p;
+         $KZ::uN++;
+      }
+      %fo.close();
+   }
+   %fo.delete();
+   $KZ::uLoaded = 1;
+   echo("[Kanzlei] character table loaded:" SPC $KZ::uN SPC "entries");
+}
+
+function KZ_encLoop(%s)
 {
    %out = "";
    %n = strlen(%s);
+   $KZ::encUnknown = 0;
    for (%i = 0; %i < %n; %i++) {
       %c = getSubStr(%s, %i, 1);
       %o = strpos($KZ::asc, %c) + 1;
@@ -69,8 +103,43 @@ function KZ_enc(%s)
          %out = %out @ %c;
       } else if (%o <= 0) {
          %out = %out @ "%3F";
+         $KZ::encUnknown = 1;
       } else {
          %out = %out @ "%" @ KZ_hex2(%o);
+      }
+   }
+   return %out;
+}
+
+function KZ_enc(%s)
+{
+   %out = KZ_encLoop(%s);
+   if (!$KZ::encUnknown) {
+      return %out;
+   }
+   // something was not plain ASCII: swap the known characters for letter-only tokens, encode, then turn the tokens into UTF-8 percent bytes.
+   // Step 1 only tries the 7 German characters (the first 7 table lines, cheap); step 2 runs the whole table only if something else is still unknown.
+   if (!$KZ::uLoaded) {
+      KZ_loadChars();
+   }
+   %lim = 7;
+   if (%lim > $KZ::uN) {
+      %lim = $KZ::uN;
+   }
+   for (%i = 0; %i < %lim; %i++) {
+      %s = strreplace(%s, $KZ::uC[%i], "~u" @ %i @ "~");
+   }
+   %out = KZ_encLoop(%s);
+   if ($KZ::encUnknown && $KZ::uN > %lim) {
+      for (%i = %lim; %i < $KZ::uN; %i++) {
+         %s = strreplace(%s, $KZ::uC[%i], "~u" @ %i @ "~");
+      }
+      %out = KZ_encLoop(%s);
+      %lim = $KZ::uN;
+   }
+   for (%i = 0; %i < %lim; %i++) {
+      if (strpos(%out, "~u" @ %i @ "~") >= 0) {
+         %out = strreplace(%out, "~u" @ %i @ "~", $KZ::uP[%i]);
       }
    }
    return %out;
@@ -238,32 +307,92 @@ function KZ_push(%type, %id, %data)
 }
 
 // big data in chunks cut at line ends (so no UTF-8 character is ever split).  %hash <> "" = shared catalog, cached by the relay for everyone.
+// The work is done in small steps on a timer (job queue): cutting the 150 KB catalog into 300 parts in one go froze the game for ~24 s.
 function KZ_uploadBlob(%name, %text, %hash)
 {
    if (!$KZ::live) {
       return;
    }
-   %total = 0;
-   %cur = "";
-   %size = $KZ::chunk;
-   %nrec = getRecordCount(%text);
-   for (%i = 0; %i < %nrec; %i++) {
-      %rec = getRecord(%text, %i);
-      if (%cur !$= "" && strlen(%cur) + strlen(%rec) + 1 > %size) {
-         %part[%total] = %cur;
-         %total++;
-         %cur = "";
+   %j = $KZ::jN + 0;
+   $KZ::jName[%j] = %name;
+   $KZ::jHash[%j] = %hash;
+   $KZ::jText[%j] = %text;
+   $KZ::jN = %j + 1;
+   if (!$KZ::jBusy) {
+      $KZ::jBusy = 1;
+      schedule(30, 0, "KZ_jobPump");
+   }
+}
+
+function KZ_jobReset()
+{
+   $KZ::jHead = 0;
+   $KZ::jN = 0;
+   $KZ::jPhase = 0;
+   $KZ::jBusy = 0;
+}
+
+function KZ_jobPump()
+{
+   if (!$KZ::live) {
+      KZ_jobReset();
+      return;
+   }
+   if ($KZ::jHead >= $KZ::jN) {
+      KZ_jobReset();
+      return;
+   }
+   %job = $KZ::jHead;
+   if ($KZ::jPhase == 0) {
+      $KZ::jPos = 0;
+      $KZ::jParts = 0;
+      $KZ::jCur = "";
+      $KZ::jPhase = 1;
+   }
+   if ($KZ::jPhase == 1) {
+      // step 1: cut the text into parts, 60 lines per tick
+      %text = $KZ::jText[%job];
+      %len = strlen(%text);
+      %size = $KZ::chunk;
+      for (%c = 0; %c < 60 && $KZ::jPos < %len; %c++) {
+         %e = strpos(%text, "\n", $KZ::jPos);
+         if (%e < 0) {
+            %e = %len;
+         }
+         %rec = getSubStr(%text, $KZ::jPos, %e - $KZ::jPos);
+         $KZ::jPos = %e + 1;
+         if ($KZ::jCur !$= "" && strlen($KZ::jCur) + strlen(%rec) + 1 > %size) {
+            $KZ::jPart[$KZ::jParts] = $KZ::jCur;
+            $KZ::jParts++;
+            $KZ::jCur = "";
+         }
+         $KZ::jCur = $KZ::jCur @ %rec @ "\n";
       }
-      %cur = %cur @ %rec @ "\n";
+      if ($KZ::jPos >= %len) {
+         if ($KZ::jCur !$= "" || $KZ::jParts == 0) {
+            $KZ::jPart[$KZ::jParts] = $KZ::jCur;
+            $KZ::jParts++;
+         }
+         $KZ::jCur = "";
+         $KZ::jText[%job] = "";
+         $KZ::jSend = 0;
+         $KZ::jPhase = 2;
+         echo("[Kanzlei] sending" SPC $KZ::jName[%job] SPC "in" SPC $KZ::jParts SPC "parts");
+      }
+   } else {
+      // step 2: encode and send, 3 parts per tick
+      for (%k = 0; %k < 3 && $KZ::jSend < $KZ::jParts; %k++) {
+         %q = $KZ::jSend;
+         $KZ::jSend++;
+         KZ_req(0, "/g/blob", KZ_sessionQuery() @ "&name=" @ $KZ::jName[%job] @ "&h=" @ KZ_enc($KZ::jHash[%job]) @ "&n=" @ (%q + 1) @ "&of=" @ $KZ::jParts @ "&d=" @ KZ_enc($KZ::jPart[%q]), "", "");
+         $KZ::jPart[%q] = "";
+      }
+      if ($KZ::jSend >= $KZ::jParts) {
+         $KZ::jHead++;
+         $KZ::jPhase = 0;
+      }
    }
-   if (%cur !$= "" || %total == 0) {
-      %part[%total] = %cur;
-      %total++;
-   }
-   for (%j = 0; %j < %total; %j++) {
-      KZ_req(0, "/g/blob", KZ_sessionQuery() @ "&name=" @ %name @ "&h=" @ KZ_enc(%hash) @ "&n=" @ (%j + 1) @ "&of=" @ %total @ "&d=" @ KZ_enc(%part[%j]), "", "");
-   }
-   echo("[Kanzlei] sending" SPC %name SPC "in" SPC %total SPC "parts");
+   schedule(25, 0, "KZ_jobPump");
 }
 
 // ------------------------------------------------------------------------------------------------ the command registry (shared/commands.kz)
@@ -492,21 +621,21 @@ function KZ_exec(%line)
       %t = KZ_clean(getField(%line, 1));
       %q = KZ_clean(getField(%line, 2));
       if (KZ_isNum(%t) && KZ_isNum(%q) && %t !$= "" && %q !$= "") {
-         gm("kzdur" SPC %t SPC %q);
+         KZ_gmKz("kzdur" SPC %t SPC %q);
       }
       return;
    }
    if (%id $= "kz_eco") {
       if (getField(%line, 1) $= "live") {
-         gm("kzecolive");                 // small, every 15 s while the dashboard is open: coin totals + stock of the tracked items
+         KZ_gmKz("kzecolive");                 // small, every 15 s while the dashboard is open: coin totals + stock of the tracked items
       } else {
          gm("inflation export");          // coin history  -> blob "economy"
-         gm("kzecoitems");                // item history  -> blob "ecoitems"
+         KZ_gmKz("kzecoitems");                // item history  -> blob "ecoitems"
       }
       return;
    }
    if (%id $= "kz_players") {
-      gm("kzplayers");
+      KZ_gmKz("kzplayers");
       return;
    }
    if (%id $= "kz_refresh") {
@@ -540,6 +669,10 @@ function KZ_exec(%line)
       }
    }
    %via = $KZ::cmdVia[%i];
+   if (%via $= "server" && !$KZ::serverKz && (getWord(%tpl, 0) $= "!ecotrack" || strpos(getWord(%tpl, 0), "!kz") == 0)) {
+      KZ_push("reply", "err", %id @ ": this server has no KanzleiCore yet");
+      return;
+   }
    if (%via $= "server") {
       commandToServer('LocalChatMessage', %tpl);
       echo("[Kanzlei] server:" SPC %tpl);
@@ -671,6 +804,9 @@ function KZ_newSession()
    $KZ::k = KZ_rand(16);
    $KZ::p = KZ_rand(16);
    $KZ::after = 0;
+   $KZ::jHead = 0;
+   $KZ::jN = 0;
+   $KZ::jPhase = 0;
    $KZ::haveCmds = 0;
    $KZ::replyBuf = "";
 }
@@ -688,6 +824,7 @@ function KZ_toggle()
       return;
    }
    $KZ::openWanted = 1;
+   $KZ::serverKz = 0;       // set again by the server's KZHello after the login
    gm("login");
 }
 
@@ -767,14 +904,39 @@ function KZ_onHello(%txt, %arg)
 }
 
 // everything the web UI needs at the start (also on "kz_refresh")
+// Commands only KanzleiCore knows. An older GM module would hand them on as ordinary chat that nearby players can read, so they are
+// sent only after the server announced itself (KZHello, sent right after a successful !login).
+$KZ::serverKz = 0;
+
+function clientCmdKZHello(%version)
+{
+   $KZ::serverKz = 1;
+   $KZ::serverVer = %version;
+   echo("[Kanzlei] server GM module:" SPC %version);
+}
+
+function KZ_gmKz(%cmd)
+{
+   if (!$KZ::serverKz) {
+      return;
+   }
+   gm(%cmd);
+}
+
 function KZ_sendAll()
 {
-   gm("kzcat");                                      // server -> client: command registry, animals, ground  (clientCmdKZData*)
-   schedule(6000, 0, "KZ_dataFallback");
+   if ($KZ::serverKz) {
+      gm("kzcat");                                   // server -> client: command registry, animals, ground  (clientCmdKZData*)
+      schedule(6000, 0, "KZ_dataFallback");
+   } else {
+      echo("[Kanzlei] the server did not announce KanzleiCore: using the local command list, no !kz commands are sent");
+      KZ_push("reply", "err", "This server has no KanzleiCore yet: some functions (item tracking, live economy, durability preview, player list) stay off. Basic commands work.");
+      KZ_dataFallback();
+   }
    KZBrain_start("KZ_catalogReady");                  // items / buildings / objects from the game files
    KZ_pushFavs();
    KZ_pushTheme();
-   gm("kzplayers");
+   KZ_gmKz("kzplayers");
    KZ_push("god", $KZ::god ? "on" : "off", "");
 }
 

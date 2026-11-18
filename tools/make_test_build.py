@@ -44,6 +44,7 @@ copy("client/mod/KanzleiMOD", "client/mod/KanzleiMOD")
 write("client/mod/KanzleiMOD/kanzlei_config.cs", """// Local test: the relay runs on this PC (Start_Relay.bat). For the real website put the https / http addresses of gm.<your domain> here instead.
 $KZ::pageHost = "http://127.0.0.1:8787";
 $KZ::gameHost = "http://127.0.0.1:8787";
+$KZ::iconBase = "none";   // icons come from the relay (/icons/, see tools/copy_icons.py), not from file:///
 """)
 
 # 3. server, two layouts (same code; the mod finds its folder by itself)
@@ -64,6 +65,7 @@ write("server_VPS/scripts/lifmod/gm/steamids.cs", steam)
 for f in ("src", "migrations", "wrangler.jsonc", "package.json", "package-lock.json"):
     copy("relay/" + f, "relay/" + f)
 copy("eyes", "eyes")
+copy("tools/copy_icons.py", "tools/copy_icons.py")   # the package cannot hold the game art: this fills eyes/icons from the player's own client
 write("Start_Relay.bat", """@echo off
 rem KanzleiMOD relay + web UI on this PC (needs Node.js). Leave this window open while testing. Stop with Ctrl+C.
 cd /d "%~dp0relay"
