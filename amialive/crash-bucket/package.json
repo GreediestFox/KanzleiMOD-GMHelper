@@ -1,0 +1,1 @@
+{"name":"kanzlei-crash","private":true,"version":"1.0.0","type":"module","scripts":{"dev":"wrangler dev --local --persist-to .wrangler/state","deploy":"wrangler deploy","test":"node test.mjs"},"devDependencies":{"wrangler":"^4.152.0"}}

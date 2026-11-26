@@ -1,0 +1,17 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "kanzlei-crash",
+  "main": "src/index.js",
+  "compatibility_date": "2026-09-01",
+  "r2_buckets": [
+    // create it first:  npx wrangler r2 bucket create kanzlei-crash
+    { "binding": "REPORTS", "bucket_name": "kanzlei-crash" }
+  ],
+  "workers_dev": false,
+  // the address the server's AmIAlive.ini points to (report_url = https://crash.<your domain>/upload)
+  "routes": [{ "pattern": "crash.wulpischelande.de", "custom_domain": true }],
+  // safety net next to the bucket's own 30 day lifecycle rule: every day at 04:17 UTC everything older than 30 days is deleted
+  "triggers": { "crons": ["17 4 * * *"] },
+  "vars": { "RETENTION_DAYS": "30", "MAX_BYTES": "62914560", "MAX_PER_HOST_PER_DAY": "30" },
+  "observability": { "enabled": true }
+}
