@@ -5,7 +5,18 @@
 $ErrorActionPreference = 'Stop'
 $dir = $PSScriptRoot
 $exe = Join-Path $dir 'AmIAlive.exe'
-foreach ($f in 'AmIAlive.exe', 'Start_LiF_Server_VPS.bat', 'ddctd_cm_yo_server.exe') { if (-not (Test-Path (Join-Path $dir $f))) { throw "$f not found in $dir (run this from the server folder)." } }
+# the names of the server exe and of the start bat come from AmIAlive.ini (defaults as in AmIAlive.example.ini)
+$procName = 'ddctd_cm_yo_server'; $batName = 'Start_LiF_Server_VPS.bat'
+$iniPath = Join-Path $dir 'AmIAlive.ini'
+if (Test-Path $iniPath) {
+    foreach ($l in Get-Content $iniPath) {
+        if ($l -match '^\s*process\s*=\s*([^#;\s]+)') { $procName = $Matches[1] }
+        if ($l -match '^\s*bat\s*=\s*([^#;]+?)\s*(#.*)?$') { $batName = $Matches[1].Trim() }
+    }
+}
+if (-not (Test-Path $exe)) { throw "AmIAlive.exe not found in $dir (run Build.bat first, and run this from the server folder)." }
+if (-not (Test-Path (Join-Path $dir $batName))) { throw "$batName not found in $dir - is this the server folder? (the name is set by bat= in AmIAlive.ini)" }
+if (-not (Test-Path (Join-Path $dir ($procName + '.exe')))) { Write-Warning "$procName.exe is not in this folder (process= in AmIAlive.ini). Check the exact name of the server exe in the Task Manager (Details tab)." }
 if (-not (Test-Path (Join-Path $dir 'AmIAlive.ini'))) { Write-Warning 'No AmIAlive.ini yet: defaults are used (no Discord, no crash reports). Copy AmIAlive.example.ini to AmIAlive.ini and edit it.' }
 Get-ChildItem $dir -File | Unblock-File
 try { Add-MpPreference -ExclusionPath $dir; Add-MpPreference -ExclusionProcess 'AmIAlive.exe' } catch { Write-Warning 'Defender exclusion not set' }
