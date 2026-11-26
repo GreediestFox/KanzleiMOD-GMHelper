@@ -1,0 +1,9 @@
+AmIAlive.ini
+AmIAlive.exe
+AmIAlive.log*
+AmIAlive.status*
+AmIAlive.stopped
+AmIAlive.restart
+AmIAlive_reports/
+crash-bucket/node_modules/
+crash-bucket/.wrangler/

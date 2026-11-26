@@ -31,6 +31,9 @@ Status of what is tested and what is not: **[docs/STATUS.md](docs/STATUS.md)**. 
 - German / English page; item and object names follow the game's own language.
 - The old native panel stays available as **Ctrl+F6** (fallback) until the web UI is proven in the game.
 
+## Server watchdog
+`amialive/` – **AmIAlive**: live screen with the server's vitals, watchdog (starts the server only if nobody else is starting it), crash reports to a 30 day bucket, kill switch for crash loops, Discord webhook. See `amialive/README.md`.
+
 ## Repository layout
 ```
 shared/            commands.kz animals.kz ground.kz hidden.kz   <- edit these
