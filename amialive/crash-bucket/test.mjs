@@ -16,6 +16,7 @@ const up = (tok, body, host = "VPS1") => fetch(BASE + "/upload", { method: "PUT"
 
 let r = await fetch(BASE + "/"); check("health", r.status === 200);
 r = await up(null, zip); check("no token -> 401", r.status === 401, r.status);
+r = await up("up-test ", zip); check("a trailing blank in the header is tolerated", r.status === 200, r.status);
 r = await up("wrong", zip); check("wrong token -> 401", r.status === 401, r.status);
 r = await up("up-test", Buffer.from("this is not a zip file at all, just text")); check("not a zip -> 400", r.status === 400, r.status);
 r = await up("up-test", zip); const j = await r.json(); check("upload ok", r.status === 200 && j.ok && j.key.startsWith("crash/") && j.key.endsWith(".zip"), JSON.stringify(j));

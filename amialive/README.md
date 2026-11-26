@@ -57,12 +57,15 @@ Only then it starts the server. `checkstarters=0` switches check 2 off.
 
 ## Crash reports and the 30 day bucket
 * Sent on every crash (10 s after it, so the crash dump is written), on a crash loop, on key `U` / `AmIAlive.exe report`. At most one automatic report per `report_minutes`.
-* Content: `report.txt` (host, time, reason, last vitals, counters, last lines of `AmIAlive.log`) and the newest files matching `report_glob` in `report_dirs` (default `.;logs;data;log` relative to the server folder, changed in the last `report_days`), big files cut to their last `report_tailkb` KB, all together at most `report_maxmb` MB. Files in use are read without locking them. **Logs can contain player names, Steam IDs and IPs – the bucket is private.**
+* Content: `report.txt` (host, time, reason, last vitals, counters, last lines of `AmIAlive.log`) and the newest files matching `report_glob` in `report_dirs` (default `logs` relative to the server folder), **including the dated subfolders** (`logs\2026-11-26\...`; a dated folder is searched when its day is inside the last `report_days`, default 3; `report_subdirs` = how many levels), plus dumps next to the exe (`report_root_glob`) and `AmIAlive.log`. Big files are cut to their last `report_tailkb` KB, all together at most `report_maxmb` MB. Files in use are read without locking them. **Logs can contain player names, Steam IDs and IPs – the bucket is private.**
 * Upload goes to a small Worker (`crash-bucket/`) in front of an R2 bucket. The server only holds an **upload token** (it can add reports, nothing more); the R2 keys never leave Cloudflare. If the upload fails the zip stays in `AmIAlive_reports\` (max 5, max 7 days) and Discord says so.
 * **Retention: 30 days** – a lifecycle rule on the bucket, plus a daily cron in the Worker as a second guard. Setup is in `crash-bucket/README.md`.
 
 ## Settings
 `AmIAlive.ini` next to the exe, all keys with comments in `AmIAlive.example.ini`. It holds secrets (webhook, upload token) and is in `.gitignore`.
+
+## Folder rights
+In `C:\Program Files (x86)\...` a normal user may not write: the boot task runs as SYSTEM (fine), but **start the live screen and the commands `kill`, `release`, `restart`, `stop` as Administrator** (right click > Run as administrator), otherwise the marks cannot be written and the server processes of SYSTEM cannot be ended.
 
 ## Known limits
 * Windows only (Task Manager numbers come from the Windows performance counters and WMI).
