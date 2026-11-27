@@ -7,3 +7,4 @@ AmIAlive.restart
 AmIAlive_reports/
 crash-bucket/node_modules/
 crash-bucket/.wrangler/
+crash-bucket/crash-receiver-secrets.txt

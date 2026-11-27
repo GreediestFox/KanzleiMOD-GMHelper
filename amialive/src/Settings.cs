@@ -30,8 +30,10 @@ namespace AmIAliveApp
         // crash reports
         public string ReportUrl = "";
         public string ReportToken = "";
-        public string ReportDirs = ".;logs;data;log";
-        public string ReportGlob = "*.log;*.dmp;*.err";
+        public string ReportDirs = "logs";                 // relative to the server folder; dated subfolders (yyyy-MM-dd) are searched too
+        public string ReportGlob = "*.log;*.txt;*.dmp;*.err";
+        public string ReportRootGlob = "*.dmp;*.err";    // crash dumps / error files lying next to the server exe (AmIAlive.log is always included)
+        public int ReportSubdirs = 2;                    // how many folder levels below each report dir are searched
         public int ReportMaxMb = 25;
         public int ReportTailKb = 4096;
         public int ReportDays = 3;           // only files changed in the last days
@@ -88,6 +90,8 @@ namespace AmIAliveApp
                     case "report_token": s.ReportToken = v; break;
                     case "report_dirs": s.ReportDirs = v; break;
                     case "report_glob": s.ReportGlob = v; break;
+                    case "report_root_glob": s.ReportRootGlob = v; break;
+                    case "report_subdirs": if (int.TryParse(v, out n) && n >= 0 && n <= 5) s.ReportSubdirs = n; break;
                     case "report_maxmb": if (int.TryParse(v, out n) && n >= 1) s.ReportMaxMb = n; break;
                     case "report_tailkb": if (int.TryParse(v, out n) && n >= 64) s.ReportTailKb = n; break;
                     case "report_days": if (int.TryParse(v, out n) && n >= 1) s.ReportDays = n; break;

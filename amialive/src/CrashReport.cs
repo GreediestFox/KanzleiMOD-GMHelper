@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.IO.Compression;
 using System.Net;
@@ -24,38 +25,65 @@ namespace AmIAliveApp
 
         class Item { public string Path; public DateTime Written; public long Size; }
 
+        static void AddFile(string path, DateTime oldest, List<Item> found, HashSet<string> seen)
+        {
+            try
+            {
+                string key = Path.GetFullPath(path);
+                if (!seen.Add(key)) return;
+                FileInfo fi = new FileInfo(key);
+                if (!fi.Exists || fi.LastWriteTime < oldest) return;
+                Item it = new Item();
+                it.Path = key; it.Written = fi.LastWriteTime; it.Size = fi.Length;
+                found.Add(it);
+            }
+            catch { }
+        }
+
+        // files of one folder, then (depth > 0) the subfolders: a folder named yyyy-MM-dd counts if that day is inside the window, any other if it was changed inside it
+        static void AddDir(string full, string[] globs, DateTime oldest, int depth, List<Item> found, HashSet<string> seen)
+        {
+            foreach (string g in globs)
+            {
+                string[] files;
+                try { files = Directory.GetFiles(full, g.Trim(), SearchOption.TopDirectoryOnly); } catch { continue; }
+                foreach (string f in files) AddFile(f, oldest, found, seen);
+            }
+            if (depth <= 0) return;
+            string[] subs;
+            try { subs = Directory.GetDirectories(full); } catch { return; }
+            foreach (string sd in subs)
+            {
+                string name = Path.GetFileName(sd);
+                DateTime day;
+                bool dated = DateTime.TryParseExact(name, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out day);
+                try
+                {
+                    if (dated) { if (day.Date < oldest.Date) continue; }
+                    else if (Directory.GetLastWriteTime(sd) < oldest) continue;
+                }
+                catch { continue; }
+                AddDir(sd, globs, oldest, depth - 1, found, seen);
+            }
+        }
+
         static List<Item> FindFiles()
         {
             List<Item> found = new List<Item>();
             HashSet<string> seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             string[] dirs = S.ReportDirs.Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
             string[] globs = S.ReportGlob.Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
+            string[] rootGlobs = S.ReportRootGlob.Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
             DateTime oldest = DateTime.Now.AddDays(-S.ReportDays);
             foreach (string d0 in dirs)
             {
                 string d = d0.Trim();
                 string full = Path.IsPathRooted(d) ? d : Path.GetFullPath(Path.Combine(S.Dir, d));
-                if (!Directory.Exists(full)) continue;
-                foreach (string g in globs)
-                {
-                    string[] files;
-                    try { files = Directory.GetFiles(full, g.Trim(), SearchOption.TopDirectoryOnly); } catch { continue; }
-                    foreach (string f in files)
-                    {
-                        string key = Path.GetFullPath(f);
-                        if (!seen.Add(key)) continue;
-                        try
-                        {
-                            FileInfo fi = new FileInfo(key);
-                            if (fi.LastWriteTime < oldest) continue;
-                            Item it = new Item();
-                            it.Path = key; it.Written = fi.LastWriteTime; it.Size = fi.Length;
-                            found.Add(it);
-                        }
-                        catch { }
-                    }
-                }
+                if (Directory.Exists(full)) AddDir(full, globs, oldest, S.ReportSubdirs, found, seen);
             }
+            AddDir(S.Dir, rootGlobs, oldest, 0, found, seen);          // dumps next to the exe
+            AddFile(S.LogPath, oldest, found, seen);                    // AmIAlive's own log, always
+            AddFile(S.LogPath + ".old", oldest, found, seen);
             found.Sort(delegate (Item a, Item b) { return b.Written.CompareTo(a.Written); });
             return found;
         }

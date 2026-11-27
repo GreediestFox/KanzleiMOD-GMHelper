@@ -21,9 +21,9 @@ async function same(a, b) {
 }
 
 async function authed(request, secret) {
-  if (!secret) return false;
+  if (!secret || !String(secret).trim()) return false;
   const h = request.headers.get("authorization") || "";
-  return h.startsWith("Bearer ") && (await same(h.slice(7), secret));
+  return h.startsWith("Bearer ") && (await same(h.slice(7).trim(), String(secret).trim()));
 }
 
 const cleanHost = (s) => (String(s || "unknown").replace(/[^A-Za-z0-9_.-]/g, "_").slice(0, 40) || "unknown");

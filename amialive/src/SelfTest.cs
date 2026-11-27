@@ -267,7 +267,15 @@ namespace AmIAliveApp
                 string ol = Path.Combine(root, "logs", "old.log");
                 File.WriteAllText(ol, "old");
                 File.SetLastWriteTime(ol, DateTime.Now.AddDays(-10));
-                File.WriteAllText(Path.Combine(root, "logs", "skip.txt"), "not a log");
+                File.WriteAllText(Path.Combine(root, "logs", "skip.dat"), "not a log");
+                File.WriteAllText(Path.Combine(root, "logs", "conn.txt"), "connection log");
+                string today = DateTime.Now.ToString("yyyy-MM-dd");
+                string oldDay = DateTime.Now.AddDays(-10).ToString("yyyy-MM-dd");
+                Directory.CreateDirectory(Path.Combine(root, "logs", today));
+                Directory.CreateDirectory(Path.Combine(root, "logs", oldDay));
+                File.WriteAllText(Path.Combine(root, "logs", today, "day.log"), "today");
+                File.WriteAllText(Path.Combine(root, "logs", oldDay, "ancient.log"), "ancient");
+                File.WriteAllText(Path.Combine(root, "root.dmp"), "dump next to the exe");
                 Settings s = Settings.Parse(root, new string[0]);
                 s.ReportTailKb = 64; s.ReportMaxMb = 1; s.ReportDays = 3;
                 CrashReport.S = s;
@@ -284,7 +292,11 @@ namespace AmIAliveApp
                 }
                 Check("report.txt inside", names.Contains("report.txt"), string.Join(",", names.ToArray()));
                 Check("recent logs inside", names.Contains("logs/logs/a.log") && names.Contains("logs/logs/big.log"), string.Join(",", names.ToArray()));
-                Check("old and non-log files left out", !names.Contains("logs/logs/old.log") && !names.Contains("logs/logs/skip.txt"), string.Join(",", names.ToArray()));
+                Check("old and non-log files left out", !names.Contains("logs/logs/old.log") && !names.Contains("logs/logs/skip.dat"), string.Join(",", names.ToArray()));
+                Check("dated subfolder of today is searched", names.Contains("logs/logs/" + DateTime.Now.ToString("yyyy-MM-dd") + "/day.log"), string.Join(",", names.ToArray()));
+                Check("dated subfolder of 10 days ago is not", !names.Contains("logs/logs/" + DateTime.Now.AddDays(-10).ToString("yyyy-MM-dd") + "/ancient.log"), string.Join(",", names.ToArray()));
+                Check("txt logs are taken (connection_log.txt)", names.Contains("logs/logs/conn.txt"), string.Join(",", names.ToArray()));
+                Check("dump next to the exe and AmIAlive.log are taken", names.Contains("logs/root.dmp") && names.Contains("logs/AmIAlive.log"), string.Join(",", names.ToArray()));
                 Check("big file cut to its tail", bigLen > 0 && bigLen < 70000, bigLen.ToString());
                 try { File.Delete(zip); } catch { }
             }
